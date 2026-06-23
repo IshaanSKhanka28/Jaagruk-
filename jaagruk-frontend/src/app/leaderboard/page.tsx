@@ -2,20 +2,20 @@
 
 import React, { useState, useMemo } from "react";
 import { motion } from "framer-motion";
+import { useAccessibility } from "@/hooks/useAccessibility";
 import {
   Trophy,
   Search,
   Filter,
   Medal,
-  Award,
-  Sparkles,
   Zap,
-  CheckCircle2,
   BookOpen,
+  Sparkles,
 } from "lucide-react";
-import { MOCK_LEADERBOARD, LeaderboardEntry } from "@/lib/mock-data";
+import { MOCK_LEADERBOARD } from "@/lib/mock-data";
 
 export default function LeaderboardPage() {
+  const { screenReader } = useAccessibility();
   const [selectedCity, setSelectedCity] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -32,17 +32,22 @@ export default function LeaderboardPage() {
     <div className="mx-auto max-w-[1120px] px-4 py-12">
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-primary/10 via-surface/40 to-accent/5 border border-border rounded-lg p-6 md:p-8 mb-10 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="space-y-2 max-w-xl text-center md:text-left">
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-accent/15 text-accent border border-accent/20">
-            <Sparkles className="w-3 h-3" /> Community Heroes
+        <div className="space-y-3 max-w-xl text-center md:text-left">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent/15 text-accent border border-accent/20 w-fit">
+            <Sparkles className="w-3.5 h-3.5" /> Community Heroes
           </span>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Citizen Guard Honor Roll</h1>
-          <p className="text-sm text-muted">
+          <h1 
+            className="text-3xl font-extrabold tracking-tight text-foreground"
+            style={{ textWrap: "balance", lineHeight: "var(--leading-tight)" }}
+          >
+            Citizen Guard Honor Roll
+          </h1>
+          <p className="text-sm text-muted leading-relaxed">
             Recognizing citizens who actively spot, report, and help fix urban anomalies. Every verified report contributes to a safer, more accountable community.
           </p>
         </div>
         <div className="flex-shrink-0 flex items-center justify-center w-24 h-24 rounded-full bg-accent/10 border border-accent/20 text-accent">
-          <Trophy className="w-12 h-12" />
+          <Trophy className="w-12 h-12 animate-pulse" style={{ animationDuration: "3s" }} />
         </div>
       </div>
 
@@ -51,25 +56,29 @@ export default function LeaderboardPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Controls */}
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-surface border border-border p-4 rounded-lg shadow-sm">
-            {/* Search */}
+            {/* Search input (Touch Target: 48px height) */}
             <div className="relative w-full sm:max-w-xs">
-              <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search citizen heroes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-10 pl-9 pr-4 rounded-sm border border-border bg-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="w-full h-12 pl-9 pr-4 rounded-sm border border-border bg-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary text-foreground transition-all"
+                aria-label={screenReader ? "Search citizen heroes by name" : "Search heroes"}
+                role="searchbox"
               />
             </div>
 
-            {/* City filter */}
+            {/* City filter (Touch Target: 48px height) */}
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Filter className="w-4 h-4 text-muted" />
+              <Filter className="w-4 h-4 text-muted hidden sm:block" />
               <select
                 value={selectedCity}
                 onChange={(e) => setSelectedCity(e.target.value)}
-                className="text-xs font-semibold px-2 py-1.5 border border-border bg-background rounded-sm focus:outline-none w-full sm:w-auto"
+                className="text-xs font-semibold px-3 h-12 border border-border bg-background rounded-sm focus:outline-none w-full sm:w-auto text-foreground transition-all cursor-pointer"
+                aria-label={screenReader ? "Filter leaderboard entries by city location" : "Filter by city"}
+                role="combobox"
               >
                 <option value="all">All Cities</option>
                 <option value="Bangalore">Bangalore</option>
@@ -83,7 +92,6 @@ export default function LeaderboardPage() {
           <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-sm">
             <div className="divide-y divide-border/60">
               {filteredLeaderboard.map((entry, idx) => {
-                // Style Top 3 differently
                 const isTopThree = entry.rank <= 3;
                 const medalColors = ["text-amber-500", "text-slate-400", "text-amber-700"];
 
@@ -94,6 +102,7 @@ export default function LeaderboardPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.04 }}
                     className="p-4 flex items-center justify-between gap-4 hover:bg-border/10 transition-colors"
+                    style={{ willChange: "transform, opacity" }}
                   >
                     {/* Rank & Profile Name */}
                     <div className="flex items-center gap-4 min-w-0">
@@ -107,7 +116,7 @@ export default function LeaderboardPage() {
                       </div>
 
                       {/* Avatar */}
-                      <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-sm font-extrabold text-primary flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-sm font-extrabold text-primary flex-shrink-0 select-none">
                         {entry.avatar}
                       </div>
 
@@ -147,9 +156,14 @@ export default function LeaderboardPage() {
         {/* Right Column: Scoring Guidelines & Info */}
         <div className="space-y-6">
           <div className="bg-surface border border-border rounded-lg p-6 md:p-8 shadow-sm space-y-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 border-b border-border/40 pb-3">
               <BookOpen className="w-5 h-5 text-primary" />
-              <h3 className="font-bold">How points are calculated</h3>
+              <h3 
+                className="font-bold"
+                style={{ textWrap: "balance", lineHeight: "var(--leading-tight)" }}
+              >
+                Point Distribution
+              </h3>
             </div>
             <p className="text-xs text-muted leading-relaxed">
               We reward proactive civic contributions. Points are awarded once the AI agent validator verifies the submission:
@@ -185,7 +199,7 @@ export default function LeaderboardPage() {
 
           {/* User Score Card Mock */}
           <div className="bg-primary-subtle border border-primary/20 rounded-lg p-6 md:p-8 shadow-sm text-center space-y-4">
-            <div className="mx-auto w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-extrabold">
+            <div className="mx-auto w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-extrabold select-none">
               U
             </div>
             <div>

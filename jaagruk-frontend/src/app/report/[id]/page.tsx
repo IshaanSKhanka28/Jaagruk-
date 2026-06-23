@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useAccessibility } from "@/hooks/useAccessibility";
 import {
   MapPin,
   Calendar,
@@ -23,6 +24,7 @@ export default function ReportDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
+  const { screenReader, reducedMotion } = useAccessibility();
 
   const [complaint, setComplaint] = useState<Complaint | null>(null);
   const [hasUpvoted, setHasUpvoted] = useState(false);
@@ -56,12 +58,13 @@ export default function ReportDetailPage() {
   if (!complaint) {
     return (
       <div className="mx-auto max-w-[1120px] px-4 py-24 text-center">
-        <AlertTriangle className="w-12 h-12 text-error mx-auto mb-4" />
-        <h1 className="text-xl font-bold mb-2">Complaint Not Found</h1>
+        <AlertTriangle className="w-12 h-12 text-error mx-auto mb-4 animate-bounce" />
+        <h1 className="text-xl font-bold mb-2 text-foreground tracking-tight">Complaint Not Found</h1>
         <p className="text-muted mb-6">The report ID `{id}` could not be resolved.</p>
         <button
           onClick={() => router.push("/")}
-          className="inline-flex items-center gap-1.5 px-4 py-2 border border-border rounded-sm hover:bg-surface-raised transition-colors text-sm font-semibold"
+          className="inline-flex items-center gap-1.5 h-12 px-6 border border-border rounded-sm hover:bg-surface-raised transition-colors text-sm font-bold text-foreground select-none"
+          aria-label={screenReader ? "Return to the main homepage" : "Back to Home"}
         >
           <ArrowLeft className="w-4 h-4" /> Back to Home
         </button>
@@ -82,12 +85,15 @@ export default function ReportDetailPage() {
     }
   };
 
+  const transitionVars = reducedMotion ? { duration: 0 } : { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const };
+
   return (
     <div className="mx-auto max-w-[1120px] px-4 py-12">
-      {/* Back CTA */}
+      {/* Back CTA (Touch Target: 48px height) */}
       <button
         onClick={() => router.back()}
-        className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-foreground mb-8 transition-colors"
+        className="inline-flex items-center gap-1.5 h-12 px-4 text-sm font-bold text-muted hover:text-foreground mb-8 transition-colors rounded hover:bg-surface select-none"
+        aria-label={screenReader ? "Navigate back to the previous view" : "Back"}
       >
         <ArrowLeft className="w-4 h-4" /> Back
       </button>
@@ -97,7 +103,7 @@ export default function ReportDetailPage() {
         <div className="lg:col-span-2 space-y-8">
           {/* Main Info Card */}
           <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-sm">
-            <div className="relative aspect-video w-full border-b border-border bg-background flex items-center justify-center">
+            <div className="relative aspect-video w-full border-b border-border bg-background flex items-center justify-center select-none pointer-events-none">
               <img
                 src={complaint.imageUrl}
                 alt={complaint.title}
@@ -110,14 +116,17 @@ export default function ReportDetailPage() {
 
             <div className="p-6 md:p-8 space-y-6">
               <div>
-                <span className="text-2xl mr-2">{categoryInfo?.icon}</span>
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+                <span className="text-2xl mr-2 select-none">{categoryInfo?.icon}</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-muted select-none">
                   {categoryInfo?.label || complaint.category}
                 </span>
-                <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mt-2 text-foreground">
+                <h1 
+                  className="text-2xl md:text-3xl font-extrabold tracking-tight mt-2 text-foreground"
+                  style={{ textWrap: "balance", lineHeight: "var(--leading-tight)" }}
+                >
                   {complaint.title}
                 </h1>
-                <div className="text-xs font-mono text-muted mt-1">ID: {complaint.id}</div>
+                <div className="text-xs font-mono text-muted mt-1 select-all">ID: {complaint.id}</div>
               </div>
 
               {/* Meta information row */}
@@ -137,25 +146,27 @@ export default function ReportDetailPage() {
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-muted">Citizen Description</h3>
-                <p className="text-foreground leading-relaxed whitespace-pre-line">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted">Citizen Description</h3>
+                <p className="text-foreground leading-normal whitespace-pre-line max-w-[65ch]">
                   {complaint.description}
                 </p>
               </div>
 
-              {/* Action row (Upvote) */}
-              <div className="flex items-center gap-4 pt-4">
+              {/* Action row (Upvote) - Touch Target: 48px height */}
+              <div className="flex items-center gap-4 pt-4 border-t border-border/40">
                 <button
                   onClick={handleUpvote}
-                  className={`inline-flex items-center gap-2 px-5 py-3 rounded-md font-semibold border transition-all duration-fast ${
+                  className={`inline-flex items-center justify-center gap-2 h-12 px-6 rounded-md font-bold border transition-all select-none ${
                     hasUpvoted
                       ? "bg-primary border-primary text-primary-foreground shadow-sm scale-95"
                       : "bg-background border-border text-foreground hover:bg-surface-raised"
                   }`}
+                  aria-label={screenReader ? "Upvote this civic report to draw administrative priority attention" : "Upvote report"}
+                  aria-pressed={hasUpvoted}
                 >
                   <ThumbsUp className={`w-4 h-4 ${hasUpvoted ? "fill-current" : ""}`} />
                   <span>{hasUpvoted ? "Upvoted" : "Upvote Complaint"}</span>
-                  <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-black/10 dark:bg-white/10">
+                  <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-black/10 dark:bg-white/10 font-mono font-bold">
                     {upvoteCount}
                   </span>
                 </button>
@@ -165,21 +176,22 @@ export default function ReportDetailPage() {
 
           {/* AI Multi-Agent Diagnostic Panel */}
           <div className="bg-surface border border-border rounded-lg p-6 md:p-8 shadow-sm space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-border/40 pb-4">
               <div className="flex items-center gap-2">
                 <Terminal className="w-5 h-5 text-accent" />
                 <h2 className="text-lg font-bold">AI Agent Diagnostics</h2>
               </div>
               <button
                 onClick={() => setShowRawLogs(!showRawLogs)}
-                className="text-xs font-semibold text-primary hover:text-primary-hover transition-colors"
+                className="text-xs font-bold text-primary hover:text-primary-hover transition-colors h-10 px-3 rounded hover:bg-primary/5 select-none"
+                aria-label={screenReader ? "Toggle visual display between agent cards and raw diagnostic JSON files" : "Toggle raw logs"}
               >
                 {showRawLogs ? "Show Decoded Output" : "View Raw JSON Log"}
               </button>
             </div>
 
             {showRawLogs ? (
-              <pre className="p-4 rounded-sm bg-background border border-border font-mono text-xs overflow-x-auto max-h-96 text-muted">
+              <pre className="p-4 rounded-sm bg-background border border-border font-mono text-xs overflow-x-auto max-h-96 text-muted select-all leading-normal">
                 {JSON.stringify(complaint, null, 2)}
               </pre>
             ) : (
@@ -238,7 +250,7 @@ export default function ReportDetailPage() {
 
                 {/* Generated official letter draft */}
                 <div className="col-span-1 md:col-span-2 p-4 rounded-sm border border-border bg-background/50 space-y-2">
-                  <div className="font-semibold text-sm text-foreground">Auto-Drafted Formal Complaint Letter</div>
+                  <div className="font-semibold text-sm text-foreground border-b border-border/40 pb-2">Auto-Drafted Formal Complaint Letter</div>
                   <p className="text-xs font-mono text-muted border border-border/40 p-3 rounded-sm bg-background leading-relaxed select-all">
                     To,<br />
                     The Ward Grievance Officer,<br />
@@ -258,10 +270,15 @@ export default function ReportDetailPage() {
         <div className="space-y-8">
           {/* Status Timeline */}
           <div className="bg-surface border border-border rounded-lg p-6 md:p-8 shadow-sm space-y-6">
-            <h3 className="text-lg font-bold">Complaint Lifecycle</h3>
+            <h3 
+              className="text-lg font-bold tracking-tight"
+              style={{ textWrap: "balance", lineHeight: "var(--leading-tight)" }}
+            >
+              Complaint Lifecycle
+            </h3>
 
             <div className="relative border-l border-border pl-6 ml-2 space-y-8">
-              {complaint.timeline.map((event, idx) => {
+              {complaint.timeline.map((event) => {
                 const isActive = event.status === "active";
                 const isCompleted = event.status === "completed";
 
@@ -273,11 +290,11 @@ export default function ReportDetailPage() {
                         isCompleted
                           ? "bg-success border-success text-white"
                           : isActive
-                          ? "bg-accent border-accent text-white animate-pulse"
+                          ? "bg-accent border-accent text-white"
                           : "bg-surface border-border text-transparent"
-                      }`}
+                      } ${isActive && !reducedMotion ? "animate-pulse" : ""}`}
                     >
-                      {isCompleted && <span className="text-[8px] font-bold">✓</span>}
+                      {isCompleted && <span className="text-[8px] font-bold select-none pointer-events-none">✓</span>}
                     </div>
 
                     <div className="space-y-1">
@@ -300,7 +317,7 @@ export default function ReportDetailPage() {
                       </div>
                       <p className="text-xs text-muted leading-relaxed">{event.description}</p>
                       {event.agent && (
-                        <span className="inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-background border border-border text-muted">
+                        <span className="inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-background border border-border text-muted select-none">
                           🤖 {event.agent}
                         </span>
                       )}

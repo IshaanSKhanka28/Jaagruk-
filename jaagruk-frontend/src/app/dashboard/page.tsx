@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import { useAccessibility } from "@/hooks/useAccessibility";
 import {
   TrendingUp,
   CheckCircle2,
@@ -21,12 +22,21 @@ import {
 import { StatCard } from "@/components/ui/stat-card";
 
 export default function DashboardPage() {
+  const { screenReader } = useAccessibility();
+
   return (
     <div className="mx-auto max-w-[1120px] px-4 py-12 space-y-10">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Civic Impact</h1>
-        <p className="text-muted mt-1">Real-time metrics tracking municipal response efficiency and engagement.</p>
+      <div className="space-y-2">
+        <h1 
+          className="text-3xl font-extrabold tracking-tight text-foreground"
+          style={{ textWrap: "balance", lineHeight: "var(--leading-tight)" }}
+        >
+          Civic Impact
+        </h1>
+        <p className="text-muted leading-normal max-w-[65ch]">
+          Real-time metrics tracking municipal response efficiency and engagement.
+        </p>
       </div>
 
       {/* Grid: 4 Core Stat Cards */}
@@ -59,27 +69,33 @@ export default function DashboardPage() {
         {/* Left Column: Category Distribution */}
         <div className="lg:col-span-2 bg-surface border border-border rounded-lg p-6 md:p-8 shadow-sm space-y-6">
           <div>
-            <h3 className="text-lg font-bold">Category Distribution</h3>
-            <p className="text-xs text-muted">Breakdown of reported issues by civic classification.</p>
+            <h3 
+              className="text-lg font-bold tracking-tight"
+              style={{ textWrap: "balance", lineHeight: "var(--leading-tight)" }}
+            >
+              Category Distribution
+            </h3>
+            <p className="text-xs text-muted mt-1">Breakdown of reported issues by civic classification.</p>
           </div>
 
           <div className="space-y-4">
             {MOCK_CATEGORY_DISTRIBUTION.map((item, idx) => (
               <div key={item.category} className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-semibold">{item.category}</span>
+                  <span className="font-semibold text-foreground">{item.category}</span>
                   <span className="font-mono text-muted">
                     {item.count.toLocaleString("en-IN")} ({item.percentage}%)
                   </span>
                 </div>
                 {/* Horizontal Progress Bar */}
-                <div className="h-2 w-full bg-border rounded-full overflow-hidden">
+                <div className="h-2.5 w-full bg-border rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     whileInView={{ width: `${item.percentage}%` }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.8, delay: idx * 0.05 }}
                     className="h-full bg-primary rounded-full"
+                    style={{ willChange: "width" }}
                   />
                 </div>
               </div>
@@ -90,8 +106,13 @@ export default function DashboardPage() {
         {/* Right Column: Status Summary */}
         <div className="bg-surface border border-border rounded-lg p-6 md:p-8 shadow-sm flex flex-col justify-between space-y-6">
           <div>
-            <h3 className="text-lg font-bold">Lifecycle Breakdown</h3>
-            <p className="text-xs text-muted">Status of all complaints registered within the network.</p>
+            <h3 
+              className="text-lg font-bold tracking-tight"
+              style={{ textWrap: "balance", lineHeight: "var(--leading-tight)" }}
+            >
+              Lifecycle Breakdown
+            </h3>
+            <p className="text-xs text-muted mt-1">Status of all complaints registered within the network.</p>
           </div>
 
           {/* Donut Chart representation via SVG */}
@@ -168,12 +189,17 @@ export default function DashboardPage() {
 
       {/* City Statistics */}
       <div className="bg-surface border border-border rounded-lg p-6 md:p-8 shadow-sm space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-bold">Active Urban Centers</h3>
-            <p className="text-xs text-muted">Comparative log of issues resolved by municipality.</p>
+            <h3 
+              className="text-lg font-bold tracking-tight"
+              style={{ textWrap: "balance", lineHeight: "var(--leading-tight)" }}
+            >
+              Active Urban Centers
+            </h3>
+            <p className="text-xs text-muted mt-1">Comparative log of issues resolved by municipality.</p>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 border border-primary/20 text-primary rounded-full text-xs font-semibold">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-primary/20 text-primary rounded-full text-xs font-semibold self-start sm:self-auto">
             <Building className="w-3.5 h-3.5" />
             <span>Active cities: {MOCK_DASHBOARD_STATS.citiesActive}</span>
           </div>

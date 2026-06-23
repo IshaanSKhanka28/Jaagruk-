@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAccessibility } from "@/hooks/useAccessibility";
 import {
   MapPin,
   Camera,
@@ -31,6 +32,7 @@ const STEPS = [
 
 export default function ReportPage() {
   const router = useRouter();
+  const { screenReader, reducedMotion } = useAccessibility();
   const [currentStep, setCurrentStep] = useState(0);
 
   // Form State
@@ -105,11 +107,9 @@ export default function ReportPage() {
       setPipelineStep((prev) => prev + 1);
     }
 
-    // Redirect to a mocked report detail page with a random ID
     const randomIdNum = Math.floor(100 + Math.random() * 900);
     const newId = `JGK-2026-${randomIdNum}`;
     
-    // Save new complaint temporarily in session storage to showcase in client
     const customComplaint = {
       id: newId,
       title,
@@ -143,6 +143,8 @@ export default function ReportPage() {
     return false;
   };
 
+  const transitionVars = reducedMotion ? { duration: 0 } : { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const };
+
   return (
     <div className="mx-auto max-w-[640px] px-4 py-12">
       <AnimatePresence mode="wait">
@@ -152,11 +154,13 @@ export default function ReportPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
+            transition={transitionVars}
             className="bg-surface border border-border rounded-lg p-6 md:p-8 shadow-sm"
+            style={{ willChange: "transform, opacity" }}
           >
             {/* Title */}
-            <h1 className="text-2xl font-bold mb-2">Report a Civic Issue</h1>
-            <p className="text-sm text-muted mb-8">
+            <h1 className="text-2xl font-bold mb-2 text-foreground tracking-tight">Report a Civic Issue</h1>
+            <p className="text-sm text-muted mb-8 leading-relaxed">
               Complete the steps below. The AI pipeline will validate and file it instantly.
             </p>
 
@@ -189,14 +193,17 @@ export default function ReportPage() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
+                  transition={transitionVars}
                   className="space-y-6"
                 >
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold">Select City</label>
+                    <label className="text-sm font-semibold text-foreground">Select City</label>
                     <select
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="w-full h-11 px-3 rounded-sm border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary focus:outline-none"
+                      className="w-full h-12 px-3 rounded-sm border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary focus:outline-none text-foreground transition-all cursor-pointer"
+                      aria-label={screenReader ? "Select active city for the issue report" : "Select city"}
+                      role="combobox"
                     >
                       <option value="Bangalore">Bangalore</option>
                       <option value="Mumbai">Mumbai</option>
@@ -205,7 +212,7 @@ export default function ReportPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold">Drop Pin on Map</label>
+                    <label className="text-sm font-semibold text-foreground">Drop Pin on Map</label>
                     <p className="text-xs text-muted mb-2">Click anywhere on the grid below to simulate location mapping.</p>
                     <div
                       onClick={handleMapClick}
@@ -214,8 +221,9 @@ export default function ReportPage() {
                         backgroundImage: "radial-gradient(var(--color-border) 1px, transparent 1px)",
                         backgroundSize: "20px 20px",
                       }}
+                      role="application"
+                      aria-label="Simulation grid map coordinate planner"
                     >
-                      {/* Grid design mimicking simulated map lines */}
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-border/10 to-transparent pointer-events-none" />
                       
                       {/* Simple mock streets */}
@@ -223,16 +231,16 @@ export default function ReportPage() {
                       <div className="absolute left-[70%] top-0 w-4 h-full bg-border/20" />
                       <div className="absolute left-0 top-[40%] w-full h-4 bg-border/20" />
                       
-                      <div className="absolute text-[10px] text-muted bottom-2 right-2 font-mono">
+                      <div className="absolute text-[10px] text-muted bottom-2 right-2 font-mono select-none">
                         LAT: {(12.9 + pinCoords.y / 1000).toFixed(4)}, LNG: {(77.5 + pinCoords.x / 1000).toFixed(4)}
                       </div>
 
                       {/* Drop Pin */}
                       <motion.div
-                        animate={{ y: [0, -4, 0] }}
+                        animate={reducedMotion ? {} : { y: [0, -4, 0] }}
                         transition={{ repeat: Infinity, duration: 1.5 }}
                         className="absolute text-accent"
-                        style={{ left: `${pinCoords.x}%`, top: `${pinCoords.y}%`, transform: "translate(-50%, -100%)" }}
+                        style={{ left: `${pinCoords.x}%`, top: `${pinCoords.y}%`, transform: "translate(-50%, -100%)", willChange: "transform" }}
                       >
                         <MapPin className="w-8 h-8 fill-accent/20" />
                       </motion.div>
@@ -240,13 +248,14 @@ export default function ReportPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold">Detected Address</label>
+                    <label className="text-sm font-semibold text-foreground">Detected Address</label>
                     <input
                       type="text"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       placeholder="e.g. 12th Main Road, Indiranagar"
-                      className="w-full h-11 px-3 rounded-sm border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary focus:outline-none"
+                      className="w-full h-12 px-3 rounded-sm border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary focus:outline-none text-foreground transition-all"
+                      aria-label={screenReader ? "Confirm or write the detected address location details" : "Street address"}
                     />
                   </div>
                 </motion.div>
@@ -257,24 +266,28 @@ export default function ReportPage() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
+                  transition={transitionVars}
                   className="space-y-4"
                 >
-                  <label className="text-sm font-semibold">Select Issue Category</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="text-sm font-semibold text-foreground">Select Issue Category</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup" aria-label="Anomaly category selection">
                     {Object.entries(CATEGORY_META).map(([key, value]) => (
                       <button
                         key={key}
                         type="button"
                         onClick={() => setCategory(key as ComplaintCategory)}
-                        className={`flex items-center gap-4 p-4 rounded-sm border text-left transition-all duration-fast ${
+                        className={`flex items-center gap-4 p-4 rounded-sm border text-left transition-all duration-fast min-h-[56px] select-none ${
                           category === key
-                            ? "border-primary bg-primary-subtle text-foreground shadow-sm"
+                            ? "border-primary bg-primary-subtle text-foreground shadow-sm font-bold"
                             : "border-border bg-background hover:bg-surface-raised"
                         }`}
+                        role="radio"
+                        aria-checked={category === key}
+                        aria-label={screenReader ? `Select issue category ${value.label}` : value.label}
                       >
-                        <span className="text-2xl">{value.icon}</span>
+                        <span className="text-2xl select-none">{value.icon}</span>
                         <div>
-                          <div className="font-semibold text-sm">{value.label}</div>
+                          <div className="font-semibold text-sm text-foreground">{value.label}</div>
                           <div className="text-xs text-muted">Civic issue category</div>
                         </div>
                       </button>
@@ -288,31 +301,33 @@ export default function ReportPage() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
+                  transition={transitionVars}
                   className="space-y-6"
                 >
-                  <label className="text-sm font-semibold">Attach Photograph</label>
-                  <p className="text-xs text-muted">
+                  <label className="text-sm font-semibold text-foreground">Attach Photograph</label>
+                  <p className="text-xs text-muted mb-4 leading-normal">
                     Take or upload a high-quality photo. AI will scan this photo to validate the report.
                   </p>
 
                   {!photo ? (
-                    <div className="border-2 border-dashed border-border rounded-sm bg-background p-12 flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary transition-colors relative">
+                    <div className="border-2 border-dashed border-border rounded-sm bg-background p-12 flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary transition-colors relative min-h-[160px]">
                       <input
                         type="file"
                         accept="image/*"
                         onChange={handlePhotoUpload}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        aria-label={screenReader ? "Select and upload a civic issue photograph from your device" : "Upload photo"}
                       />
-                      <Upload className="w-10 h-10 text-muted mb-4" />
-                      <p className="font-semibold text-sm mb-1">Click to upload photo</p>
-                      <p className="text-xs text-muted">Supports JPG, PNG up to 5MB</p>
+                      <Upload className="w-10 h-10 text-muted mb-4 pointer-events-none" />
+                      <p className="font-semibold text-sm mb-1 text-foreground pointer-events-none">Click to upload photo</p>
+                      <p className="text-xs text-muted pointer-events-none">Supports JPG, PNG up to 5MB</p>
                     </div>
                   ) : (
                     <div className="border border-border rounded-sm bg-background p-4 relative flex flex-col items-center">
                       <img
                         src={photo}
                         alt="Uploaded preview"
-                        className="w-full max-h-56 object-cover rounded-sm border border-border mb-4"
+                        className="w-full max-h-56 object-cover rounded-sm border border-border mb-4 select-none"
                       />
                       <div className="flex items-center justify-between w-full">
                         <span className="text-xs font-mono text-muted truncate max-w-[80%]">
@@ -321,7 +336,8 @@ export default function ReportPage() {
                         <button
                           type="button"
                           onClick={handleRemovePhoto}
-                          className="p-2 text-error hover:bg-error/10 rounded-sm transition-colors"
+                          className="w-10 h-10 flex items-center justify-center text-error hover:bg-error/10 rounded-sm transition-colors"
+                          aria-label={screenReader ? "Delete current attached image and upload a new one" : "Remove photo"}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -330,8 +346,8 @@ export default function ReportPage() {
                   )}
 
                   {/* Quick Preset Photos (For ease of mock testing) */}
-                  <div className="space-y-2">
-                    <span className="text-xs text-muted font-semibold">Or use a sample image:</span>
+                  <div className="space-y-2 pt-2 border-t border-border/40">
+                    <span className="text-xs text-muted font-bold block mb-1">Or use a sample image:</span>
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -339,9 +355,10 @@ export default function ReportPage() {
                           setPhoto("https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=800&fit=crop");
                           setPhotoName("pothole_sample.jpg");
                         }}
-                        className="text-xs border border-border px-3 py-1.5 rounded-full hover:bg-surface-raised transition-colors"
+                        className="text-xs font-semibold border border-border px-4 py-2.5 rounded-full hover:bg-surface-raised transition-colors min-h-[40px]"
+                        aria-label="Load mock pothole sample photograph"
                       >
-                        🕳️ Sample Pothole
+                        🕳️ Pothole Sample
                       </button>
                       <button
                         type="button"
@@ -349,9 +366,10 @@ export default function ReportPage() {
                           setPhoto("https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=800&fit=crop");
                           setPhotoName("garbage_sample.jpg");
                         }}
-                        className="text-xs border border-border px-3 py-1.5 rounded-full hover:bg-surface-raised transition-colors"
+                        className="text-xs font-semibold border border-border px-4 py-2.5 rounded-full hover:bg-surface-raised transition-colors min-h-[40px]"
+                        aria-label="Load mock garbage overflow sample photograph"
                       >
-                        🗑️ Sample Garbage
+                        🗑️ Garbage Sample
                       </button>
                     </div>
                   </div>
@@ -363,27 +381,30 @@ export default function ReportPage() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
+                  transition={transitionVars}
                   className="space-y-6"
                 >
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold">Short Title</label>
+                    <label className="text-sm font-semibold text-foreground">Short Title</label>
                     <input
                       type="text"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="e.g. Water leak leaking on street"
-                      className="w-full h-11 px-3 rounded-sm border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary focus:outline-none"
+                      className="w-full h-12 px-3 rounded-sm border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary focus:outline-none text-foreground transition-all"
+                      aria-label={screenReader ? "Specify a short title summarizing the reported issue" : "Report Title"}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold">Detailed Description</label>
+                    <label className="text-sm font-semibold text-foreground">Detailed Description</label>
                     <textarea
                       rows={5}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Give details about size, hazards, safety risks, duration..."
-                      className="w-full p-3 rounded-sm border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary focus:outline-none resize-none"
+                      className="w-full p-3 rounded-sm border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary focus:outline-none resize-none text-foreground transition-all h-32"
+                      aria-label={screenReader ? "Add a comprehensive description detailing safety risks and duration" : "Report Description"}
                     />
                   </div>
                 </motion.div>
@@ -396,7 +417,8 @@ export default function ReportPage() {
                 type="button"
                 onClick={handleBack}
                 disabled={currentStep === 0}
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-foreground disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                className="h-12 px-4 inline-flex items-center gap-1.5 text-sm font-bold text-muted hover:text-foreground disabled:opacity-30 disabled:pointer-events-none transition-colors rounded hover:bg-border/10 select-none"
+                aria-label={screenReader ? "Go back to the previous report setup step" : "Back"}
               >
                 <ArrowLeft className="w-4 h-4" /> Back
               </button>
@@ -406,7 +428,8 @@ export default function ReportPage() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={!isStepValid()}
-                  className="inline-flex items-center gap-1.5 px-6 py-3 rounded-md font-semibold bg-accent text-accent-foreground hover:bg-accent-hover disabled:opacity-50 disabled:pointer-events-none transition-colors shadow-sm"
+                  className="h-12 px-6 inline-flex items-center gap-1.5 rounded-md font-bold bg-accent text-accent-foreground hover:bg-accent-hover disabled:opacity-50 disabled:pointer-events-none transition-all shadow-sm select-none"
+                  aria-label={screenReader ? "Submit report to the AI agent validation pipeline" : "Submit Report"}
                 >
                   Submit Report <Check className="w-4 h-4" />
                 </button>
@@ -415,7 +438,8 @@ export default function ReportPage() {
                   type="button"
                   onClick={handleNext}
                   disabled={!isStepValid()}
-                  className="inline-flex items-center gap-1.5 px-6 py-3 rounded-md font-semibold bg-primary text-primary-foreground hover:bg-primary-hover disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                  className="h-12 px-6 inline-flex items-center gap-1.5 rounded-md font-bold bg-primary text-primary-foreground hover:bg-primary-hover disabled:opacity-50 disabled:pointer-events-none transition-all select-none"
+                  aria-label={screenReader ? "Continue to the next report step" : "Continue"}
                 >
                   Continue <ArrowRight className="w-4 h-4" />
                 </button>
@@ -428,17 +452,19 @@ export default function ReportPage() {
             key="submitting"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
+            transition={transitionVars}
             className="bg-surface border border-border rounded-lg p-8 shadow-md text-center max-w-[500px] mx-auto space-y-8"
+            style={{ willChange: "transform, opacity" }}
           >
             <div>
-              <h2 className="text-xl font-bold mb-2">Deploying AI Pipeline</h2>
+              <h2 className="text-xl font-bold mb-2 text-foreground tracking-tight">Deploying AI Pipeline</h2>
               <p className="text-sm text-muted">
                 Executing multi-agent verification and civic routing...
               </p>
             </div>
 
             {/* Animation Core */}
-            <div className="flex justify-center py-6">
+            <div className="flex justify-center py-6 select-none pointer-events-none">
               <div className="relative flex items-center justify-center">
                 <Loader2 className="w-24 h-24 text-primary animate-spin" style={{ strokeWidth: 1 }} />
                 <div className="absolute text-2xl animate-pulse">🤖</div>
@@ -449,9 +475,9 @@ export default function ReportPage() {
             <div className="space-y-4 text-left max-w-sm mx-auto border-t border-border/50 pt-6">
               {/* Agent Step 1 */}
               <div className="flex items-start gap-3">
-                <div className="mt-1">
+                <div className="mt-1 flex-shrink-0">
                   {pipelineStep > 0 ? (
-                    <div className="w-5 h-5 rounded-full bg-success text-white flex items-center justify-center text-xs">
+                    <div className="w-5 h-5 rounded-full bg-success text-white flex items-center justify-center text-xs font-bold select-none pointer-events-none">
                       ✓
                     </div>
                   ) : (
@@ -459,7 +485,7 @@ export default function ReportPage() {
                   )}
                 </div>
                 <div>
-                  <div className="font-semibold text-sm">Vision Agent Validation</div>
+                  <div className="font-semibold text-sm text-foreground">Vision Agent Validation</div>
                   <div className="text-xs text-muted">
                     {pipelineStep > 0 ? "Validated: Street damage confirmed" : "Scanning photo for civic anomalies..."}
                   </div>
@@ -468,9 +494,9 @@ export default function ReportPage() {
 
               {/* Agent Step 2 */}
               <div className="flex items-start gap-3">
-                <div className="mt-1">
+                <div className="mt-1 flex-shrink-0">
                   {pipelineStep > 1 ? (
-                    <div className="w-5 h-5 rounded-full bg-success text-white flex items-center justify-center text-xs">
+                    <div className="w-5 h-5 rounded-full bg-success text-white flex items-center justify-center text-xs font-bold select-none pointer-events-none">
                       ✓
                     </div>
                   ) : pipelineStep === 1 ? (
@@ -480,7 +506,7 @@ export default function ReportPage() {
                   )}
                 </div>
                 <div>
-                  <div className="font-semibold text-sm">Classification & Severity Assessment</div>
+                  <div className="font-semibold text-sm text-foreground">Classification & Severity Assessment</div>
                   <div className="text-xs text-muted">
                     {pipelineStep > 1
                       ? `Classified: ${category ? category.toUpperCase() : "GENERAL"} - Severity Assigned`
@@ -493,9 +519,9 @@ export default function ReportPage() {
 
               {/* Agent Step 3 */}
               <div className="flex items-start gap-3">
-                <div className="mt-1">
+                <div className="mt-1 flex-shrink-0">
                   {pipelineStep > 2 ? (
-                    <div className="w-5 h-5 rounded-full bg-success text-white flex items-center justify-center text-xs">
+                    <div className="w-5 h-5 rounded-full bg-success text-white flex items-center justify-center text-xs font-bold select-none pointer-events-none">
                       ✓
                     </div>
                   ) : pipelineStep === 2 ? (
@@ -505,7 +531,7 @@ export default function ReportPage() {
                   )}
                 </div>
                 <div>
-                  <div className="font-semibold text-sm">Geographical Authority Routing</div>
+                  <div className="font-semibold text-sm text-foreground">Geographical Authority Routing</div>
                   <div className="text-xs text-muted">
                     {pipelineStep > 2
                       ? `Target: Ward Division, ${city}`
@@ -518,9 +544,9 @@ export default function ReportPage() {
 
               {/* Agent Step 4 */}
               <div className="flex items-start gap-3">
-                <div className="mt-1">
+                <div className="mt-1 flex-shrink-0">
                   {pipelineStep > 3 ? (
-                    <div className="w-5 h-5 rounded-full bg-success text-white flex items-center justify-center text-xs">
+                    <div className="w-5 h-5 rounded-full bg-success text-white flex items-center justify-center text-xs font-bold select-none pointer-events-none">
                       ✓
                     </div>
                   ) : pipelineStep === 3 ? (
@@ -530,7 +556,7 @@ export default function ReportPage() {
                   )}
                 </div>
                 <div>
-                  <div className="font-semibold text-sm">Official Grievance Registration</div>
+                  <div className="font-semibold text-sm text-foreground">Official Grievance Registration</div>
                   <div className="text-xs text-muted">
                     {pipelineStep > 3
                       ? "Complaint registered. Redirecting..."

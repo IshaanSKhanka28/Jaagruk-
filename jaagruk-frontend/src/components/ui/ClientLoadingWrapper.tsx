@@ -32,6 +32,10 @@ export function ClientLoadingWrapper({ children }: { children: React.ReactNode }
     // 4. Reduced Motion State Toggle
     const isReduced = localStorage.getItem("jaagruk_reduced_motion") === "true";
     setReducedMotion(isReduced);
+
+    // 5. Screen Reader Attribute
+    const isScreenReader = localStorage.getItem("jaagruk_screenreader") === "true";
+    document.documentElement.setAttribute("data-screenreader", String(isScreenReader));
   }, []);
 
   useEffect(() => {
