@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Menu, X, Shield } from "lucide-react";
+import { LogoHorizontal } from "@/components/ui/Logo";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -26,11 +27,8 @@ export function Navbar() {
     >
       <div className="mx-auto max-w-[1120px] px-4 flex items-center justify-between h-14">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-semibold text-foreground" id="logo">
-          <div className="w-8 h-8 rounded-[var(--radius-md)] bg-primary flex items-center justify-center">
-            <Shield className="w-4.5 h-4.5 text-primary-foreground" />
-          </div>
-          <span className="text-lg tracking-tight">Jaagruk</span>
+        <Link href="/" id="logo" className="hover:opacity-90 transition-opacity">
+          <LogoHorizontal size={36} />
         </Link>
 
         {/* Desktop nav */}
