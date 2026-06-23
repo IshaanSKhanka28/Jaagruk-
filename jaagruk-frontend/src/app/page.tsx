@@ -100,7 +100,7 @@ export default function Home() {
             {/* Title */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-6">
               AI-Powered Civic Action <br className="hidden sm:inline" />
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <span className="text-primary">
                 For Accountable Cities
               </span>
             </h1>
