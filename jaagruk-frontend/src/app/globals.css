@@ -1,0 +1,244 @@
+@import "tailwindcss";
+
+/* ============================================
+   JAAGRUK DESIGN SYSTEM — OKLCH Tokens
+   Based on DESIGN.md
+   ============================================ */
+
+/* --- Light Mode (default) --- */
+:root {
+  /* Primary — deep civic violet */
+  --color-primary: oklch(0.420 0.170 268);
+  --color-primary-hover: oklch(0.370 0.165 268);
+  --color-primary-subtle: oklch(0.950 0.020 268);
+  --color-primary-foreground: oklch(1.000 0.000 0);
+
+  /* Background — pure white */
+  --color-bg: oklch(1.000 0.000 0);
+  --color-surface: oklch(0.975 0.000 0);
+  --color-surface-raised: oklch(0.985 0.000 0);
+
+  /* Ink — near-black with violet lean */
+  --color-ink: oklch(0.145 0.010 270);
+  --color-muted: oklch(0.520 0.008 270);
+
+  /* Accent — warm amber for urgency */
+  --color-accent: oklch(0.680 0.175 60);
+  --color-accent-hover: oklch(0.620 0.170 60);
+  --color-accent-foreground: oklch(1.000 0.000 0);
+
+  /* Semantic */
+  --color-success: oklch(0.580 0.150 150);
+  --color-warning: oklch(0.750 0.160 80);
+  --color-error: oklch(0.550 0.190 25);
+  --color-info: oklch(0.600 0.130 245);
+
+  /* Status — complaint lifecycle */
+  --color-status-submitted: oklch(0.600 0.130 245);
+  --color-status-in-progress: oklch(0.680 0.175 60);
+  --color-status-resolved: oklch(0.580 0.150 150);
+  --color-status-rejected: oklch(0.520 0.008 270);
+
+  /* Border / Divider */
+  --color-border: oklch(0.900 0.005 270);
+  --color-border-hover: oklch(0.800 0.010 270);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px oklch(0.000 0.000 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px oklch(0.000 0.000 0 / 0.07),
+               0 2px 4px -2px oklch(0.000 0.000 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px oklch(0.000 0.000 0 / 0.08),
+               0 4px 6px -4px oklch(0.000 0.000 0 / 0.04);
+  --shadow-focus: 0 0 0 3px oklch(0.420 0.170 268 / 0.25);
+
+  /* Radii */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-full: 9999px;
+
+  /* Motion */
+  --duration-instant: 100ms;
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Z-index */
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-modal-backdrop: 30;
+  --z-modal: 40;
+  --z-toast: 50;
+  --z-tooltip: 60;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+
+  /* Typography */
+  --text-xs: clamp(0.694rem, 0.65vi + 0.5rem, 0.75rem);
+  --text-sm: clamp(0.833rem, 0.8vi + 0.6rem, 0.875rem);
+  --text-base: clamp(0.938rem, 0.9vi + 0.65rem, 1rem);
+  --text-lg: clamp(1.125rem, 1.1vi + 0.75rem, 1.2rem);
+  --text-xl: clamp(1.35rem, 1.3vi + 0.85rem, 1.44rem);
+  --text-2xl: clamp(1.62rem, 1.6vi + 1rem, 1.728rem);
+  --text-3xl: clamp(1.944rem, 1.9vi + 1.15rem, 2.074rem);
+  --text-4xl: clamp(2.333rem, 2.3vi + 1.35rem, 2.488rem);
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.025em;
+  --measure: 65ch;
+}
+
+/* --- Dark Mode --- */
+.dark {
+  --color-primary: oklch(0.650 0.160 268);
+  --color-primary-hover: oklch(0.700 0.155 268);
+  --color-primary-subtle: oklch(0.200 0.040 268);
+  --color-primary-foreground: oklch(0.050 0.005 270);
+
+  --color-bg: oklch(0.100 0.000 0);
+  --color-surface: oklch(0.140 0.005 270);
+  --color-surface-raised: oklch(0.170 0.005 270);
+
+  --color-ink: oklch(0.930 0.005 270);
+  --color-muted: oklch(0.550 0.008 270);
+
+  --color-accent: oklch(0.720 0.170 60);
+  --color-accent-hover: oklch(0.670 0.165 60);
+  --color-accent-foreground: oklch(0.050 0.005 270);
+
+  --color-success: oklch(0.650 0.140 150);
+  --color-warning: oklch(0.780 0.150 80);
+  --color-error: oklch(0.620 0.180 25);
+  --color-info: oklch(0.650 0.120 245);
+
+  --color-status-submitted: oklch(0.650 0.120 245);
+  --color-status-in-progress: oklch(0.720 0.170 60);
+  --color-status-resolved: oklch(0.650 0.140 150);
+  --color-status-rejected: oklch(0.550 0.008 270);
+
+  --color-border: oklch(0.220 0.008 270);
+  --color-border-hover: oklch(0.300 0.012 270);
+
+  --shadow-sm: 0 1px 2px oklch(0.000 0.000 0 / 0.20);
+  --shadow-md: 0 4px 6px -1px oklch(0.000 0.000 0 / 0.30),
+               0 2px 4px -2px oklch(0.000 0.000 0 / 0.20);
+  --shadow-lg: 0 10px 15px -3px oklch(0.000 0.000 0 / 0.35),
+               0 4px 6px -4px oklch(0.000 0.000 0 / 0.25);
+  --shadow-focus: 0 0 0 3px oklch(0.650 0.160 268 / 0.35);
+}
+
+/* --- Reduced Motion --- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0ms;
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+    --duration-slow: 0ms;
+  }
+}
+
+/* --- Tailwind Theme Extension --- */
+@theme inline {
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-ink);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-subtle: var(--color-primary-subtle);
+  --color-primary-foreground: var(--color-primary-foreground);
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-muted: var(--color-muted);
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-foreground: var(--color-accent-foreground);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+  --color-info: var(--color-info);
+  --color-status-submitted: var(--color-status-submitted);
+  --color-status-in-progress: var(--color-status-in-progress);
+  --color-status-resolved: var(--color-status-resolved);
+  --color-status-rejected: var(--color-status-rejected);
+  --color-border: var(--color-border);
+  --color-border-hover: var(--color-border-hover);
+  --font-sans: var(--font-inter);
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-full: var(--radius-full);
+}
+
+/* --- Base Styles --- */
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Typography --- */
+h1, h2, h3 {
+  text-wrap: balance;
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-ink);
+}
+
+h4, h5, h6 {
+  line-height: var(--leading-tight);
+  color: var(--color-ink);
+}
+
+p {
+  max-width: var(--measure);
+  line-height: var(--leading-normal);
+}
+
+/* --- Focus Styles --- */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
+}
+
+/* --- Scrollbar (subtle) --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+
+/* --- Selection --- */
+::selection {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
