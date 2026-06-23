@@ -8,3 +8,13 @@ dist/
 .next/
 .impeccable/
 Jaagruk-keys.txt
+
+# Python ignores
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+env/
