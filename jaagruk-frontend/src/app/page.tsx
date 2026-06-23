@@ -265,7 +265,7 @@ export default function Home() {
               className="flex flex-col items-center mb-8"
               style={{ willChange: "transform, opacity" }}
             >
-              <AppIcon size={40} theme={mounted ? (resolvedTheme as "light" | "dark") : "dark"} />
+              <AppIcon size={80} theme={mounted ? (resolvedTheme as "light" | "dark") : "dark"} />
               <h2 className="mt-3 text-[28px] font-extrabold tracking-tight text-[#0F172A] dark:text-white leading-none">
                 Jaagruk
               </h2>

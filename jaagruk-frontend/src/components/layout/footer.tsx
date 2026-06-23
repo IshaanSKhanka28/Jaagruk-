@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Shield } from "lucide-react";
+import { AppIcon } from "@/components/ui/Logo";
 
 export function Footer() {
   return (
@@ -8,9 +8,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Logo + tagline */}
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-[var(--radius-sm)] bg-primary flex items-center justify-center">
-              <Shield className="w-3.5 h-3.5 text-primary-foreground" />
-            </div>
+            <AppIcon size={28} />
             <div>
               <span className="text-sm font-semibold text-foreground">Jaagruk</span>
               <p className="text-xs text-muted">See it. Report it. Fix it.</p>
