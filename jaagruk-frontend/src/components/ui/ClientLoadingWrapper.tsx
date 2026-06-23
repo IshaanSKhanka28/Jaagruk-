@@ -40,13 +40,7 @@ export function ClientLoadingWrapper({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     setMounted(true);
-    
-    // First visit check
-    const seen = localStorage.getItem("jaagruk_seen");
-    if (!seen) {
-      setShowLoading(true);
-      localStorage.setItem("jaagruk_seen", "true");
-    }
+    setShowLoading(true);
 
     // Bind setting change triggers
     applyAccessibilitySettings();

@@ -30,19 +30,19 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
         <svg
           width="160"
           height="160"
-          viewBox="40 -35 120 120"
+          viewBox="0 0 28 28"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
             <clipPath id="loading-skyline-clip">
-              <circle cx="100" cy="25" r="7" />
+              <circle cx="14" cy="14" r="4.5" />
             </clipPath>
           </defs>
 
-          {/* Eye lens outline draws itself (starts 200ms, over 600ms) */}
+          {/* Eye lens outline shape (stroke-width: 2px) */}
           <motion.path
-            d="M 50,25 C 80,5 120,5 150,25 C 120,45 80,45 50,25 Z"
+            d="M 2,14 C 6,4 22,4 26,14 C 22,24 6,24 2,14 Z"
             stroke="#FFFFFF"
             strokeWidth="2"
             fill="none"
@@ -53,38 +53,38 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
 
           {/* Outer Iris scales in (800ms) */}
           <motion.circle
-            cx="100"
-            cy="25"
-            r="14"
+            cx="14"
+            cy="14"
+            r="7.5"
             stroke="#3B82F6"
-            strokeWidth="1.5"
+            strokeWidth="1"
             fill="none"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            style={{ transformOrigin: "100px 25px" }}
+            style={{ transformOrigin: "14px 14px" }}
             transition={{ delay: 0.8, duration: 0.4, ease: "easeOut" }}
           />
 
           {/* Inner Iris scales in (900ms) */}
           <motion.circle
-            cx="100"
-            cy="25"
-            r="10"
-            stroke="#1D4ED8"
-            strokeWidth="1"
+            cx="14"
+            cy="14"
+            r="5.5"
+            stroke="#3B82F6"
+            strokeWidth="0.8"
             fill="none"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            style={{ transformOrigin: "100px 25px" }}
+            style={{ transformOrigin: "14px 14px" }}
             transition={{ delay: 0.9, duration: 0.4, ease: "easeOut" }}
           />
 
           {/* Pupil fades in (1100ms) */}
           <motion.circle
-            cx="100"
-            cy="25"
-            r="7"
-            fill="#1D4ED8"
+            cx="14"
+            cy="14"
+            r="4.5"
+            fill="#1E3A8A"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.1, duration: 0.3 }}
@@ -94,60 +94,58 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
           <g clipPath="url(#loading-skyline-clip)">
             {/* Bar 1 */}
             <motion.rect
-              x="89"
-              width="2"
+              x="10.5"
+              width="1"
               fill="white"
-              initial={{ y: 32, height: 0 }}
-              animate={{ y: 24, height: 8 }}
+              initial={{ y: 20, height: 0 }}
+              animate={{ y: 13, height: 6 }}
               transition={{ delay: 1.3, duration: 0.3, ease: "easeOut" }}
             />
             {/* Bar 2 */}
             <motion.rect
-              x="94"
-              width="2"
+              x="12"
+              width="1"
               fill="white"
-              initial={{ y: 32, height: 0 }}
-              animate={{ y: 20, height: 12 }}
+              initial={{ y: 20, height: 0 }}
+              animate={{ y: 11, height: 8 }}
               transition={{ delay: 1.38, duration: 0.3, ease: "easeOut" }}
             />
             {/* Bar 3 */}
             <motion.rect
-              x="99"
-              width="2"
+              x="13.5"
+              width="1"
               fill="white"
-              initial={{ y: 32, height: 0 }}
-              animate={{ y: 22, height: 10 }}
+              initial={{ y: 20, height: 0 }}
+              animate={{ y: 12, height: 7 }}
               transition={{ delay: 1.46, duration: 0.3, ease: "easeOut" }}
             />
             {/* Bar 4 */}
             <motion.rect
-              x="104"
-              width="2"
+              x="15"
+              width="1"
               fill="white"
-              initial={{ y: 32, height: 0 }}
-              animate={{ y: 18, height: 14 }}
+              initial={{ y: 20, height: 0 }}
+              animate={{ y: 10, height: 9 }}
               transition={{ delay: 1.54, duration: 0.3, ease: "easeOut" }}
             />
             {/* Bar 5 */}
             <motion.rect
-              x="109"
-              width="2"
+              x="16.5"
+              width="1"
               fill="white"
-              initial={{ y: 32, height: 0 }}
-              animate={{ y: 23, height: 9 }}
+              initial={{ y: 20, height: 0 }}
+              animate={{ y: 13, height: 6 }}
               transition={{ delay: 1.62, duration: 0.3, ease: "easeOut" }}
             />
           </g>
 
           {/* Orange alert dot pops in with keyframe bounce (1700ms) */}
           <motion.circle
-            cx="146"
-            cy="21"
+            cx="24"
+            cy="9"
             fill="#F97316"
-            stroke="white"
-            strokeWidth="1"
             initial={{ r: 0 }}
-            animate={{ r: [0, 7.2, 6] }}
+            animate={{ r: [0, 5, 4] }}
             transition={{ delay: 1.7, duration: 0.45, ease: "easeOut" }}
           />
         </svg>
