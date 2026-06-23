@@ -8,16 +8,32 @@ import { useTheme } from "next-themes";
 // =============================================
 interface AppIconProps {
   size?: number;
+  theme?: "light" | "dark";
 }
 
-export function AppIcon({ size = 40 }: AppIconProps) {
+export function AppIcon({ size = 36, theme }: AppIconProps) {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const clipId = useId();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const currentTheme = theme || (mounted ? resolvedTheme : "light") || "light";
+  const eyeColor = currentTheme === "dark" ? "#FFFFFF" : "#1D4ED8";
+  const irisColor = currentTheme === "dark" ? "#3B82F6" : "#1D4ED8";
+
+  // Aspect ratio is 110 / 44 = 2.5
+  // If height = size, width = size * 2.5
+  const height = size;
+  const width = size * 2.5;
 
   return (
     <svg
-      width={size}
-      height={size}
-      viewBox="40 -35 120 120"
+      width={width}
+      height={height}
+      viewBox="45 3 110 44"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className="flex-shrink-0"
@@ -28,17 +44,19 @@ export function AppIcon({ size = 40 }: AppIconProps) {
         </clipPath>
       </defs>
 
-      {/* Navy Blue lens shape */}
+      {/* Eye lens outline shape (stroke-width 2.5px) */}
       <path
         d="M 50,25 C 80,5 120,5 150,25 C 120,45 80,45 50,25 Z"
-        fill="#1D4ED8"
+        stroke={eyeColor}
+        strokeWidth="2.5"
+        fill="none"
       />
 
-      {/* White outer iris ring */}
-      <circle cx="100" cy="25" r="14" stroke="white" strokeWidth="1.5" fill="none" />
+      {/* Outer iris ring (visible blue in dark mode) */}
+      <circle cx="100" cy="25" r="14" stroke={irisColor} strokeWidth="1.5" fill="none" />
 
-      {/* White inner iris ring */}
-      <circle cx="100" cy="25" r="10" stroke="white" strokeWidth="1" fill="none" />
+      {/* Inner iris ring (visible blue in dark mode) */}
+      <circle cx="100" cy="25" r="10" stroke={irisColor} strokeWidth="1" fill="none" />
 
       {/* Pupil with city skyline inside */}
       <g clipPath={`url(#${clipId})`}>
@@ -51,8 +69,8 @@ export function AppIcon({ size = 40 }: AppIconProps) {
         <rect x="109" y="23" width="2" height="9" fill="white" />
       </g>
 
-      {/* Alert orange dot on the top-right lens tip */}
-      <circle cx="146" cy="21" r="6" fill="#F97316" stroke="white" strokeWidth="1.5" />
+      {/* Alert orange dot on the top-right lens tip (r=5 gives >=8px diameter in output) */}
+      <circle cx="146" cy="21" r="5" fill="#F97316" stroke="white" strokeWidth="1.2" />
     </svg>
   );
 }
@@ -65,13 +83,13 @@ interface LogoLockupProps {
 }
 
 export function LogoLight({ size = "md" }: LogoLockupProps) {
-  const iconSize = size === "sm" ? 48 : size === "md" ? 64 : 96;
+  const iconSize = size === "sm" ? 32 : size === "md" ? 48 : 64;
   const titleSize = size === "sm" ? "text-xl" : size === "md" ? "text-2xl" : "text-4xl";
   const taglineSize = size === "sm" ? "text-[9px]" : size === "md" ? "text-xs" : "text-sm";
 
   return (
     <div className="flex flex-col items-center text-center gap-3">
-      <AppIcon size={iconSize} />
+      <AppIcon size={iconSize} theme="light" />
       <div className="space-y-1">
         <h2 
           className={`font-sans font-extrabold tracking-tight text-[#1D4ED8] ${titleSize}`} 
@@ -91,13 +109,13 @@ export function LogoLight({ size = "md" }: LogoLockupProps) {
 // 3. LogoDark Component (Dark lockup)
 // =============================================
 export function LogoDark({ size = "md" }: LogoLockupProps) {
-  const iconSize = size === "sm" ? 48 : size === "md" ? 64 : 96;
+  const iconSize = size === "sm" ? 32 : size === "md" ? 48 : 64;
   const titleSize = size === "sm" ? "text-xl" : size === "md" ? "text-2xl" : "text-4xl";
   const taglineSize = size === "sm" ? "text-[9px]" : size === "md" ? "text-xs" : "text-sm";
 
   return (
     <div className="flex flex-col items-center text-center gap-3">
-      <AppIcon size={iconSize} />
+      <AppIcon size={iconSize} theme="dark" />
       <div className="space-y-1">
         <h2 
           className={`font-sans font-extrabold tracking-tight text-white ${titleSize}`} 
@@ -129,16 +147,16 @@ export function LogoHorizontal({ theme, size = 36 }: LogoHorizontalProps) {
     setMounted(true);
   }, []);
 
-  const currentTheme = theme || (mounted ? resolvedTheme : "light") || "light";
+  const currentTheme = (theme || (mounted ? resolvedTheme : "light") || "light") as "light" | "dark";
   const textColor = currentTheme === "dark" ? "text-white" : "text-[#1D4ED8]";
 
   return (
-    <div className="flex items-center gap-2 select-none" style={{ height: size }}>
-      <AppIcon size={size} />
+    <div className="flex items-center gap-[10px] select-none pl-2" style={{ height: size }}>
+      <AppIcon size={size} theme={currentTheme} />
       <span
         className={`font-sans font-extrabold tracking-tight ${textColor}`}
         style={{
-          fontSize: `${size * 0.55}px`,
+          fontSize: "22px",
           fontWeight: 800,
           letterSpacing: "-0.05em",
           lineHeight: 1,
@@ -161,17 +179,17 @@ export function Logo({ size = "md" }: LogoLockupProps) {
     setMounted(true);
   }, []);
 
-  const currentTheme = (mounted ? resolvedTheme : "light") || "light";
+  const currentTheme = ((mounted ? resolvedTheme : "light") || "light") as "light" | "dark";
   const titleColor = currentTheme === "dark" ? "text-white" : "text-[#1D4ED8]";
   const taglineColor = currentTheme === "dark" ? "text-[#F97316]" : "text-[#64748B]";
 
-  const iconSize = size === "sm" ? 48 : size === "md" ? 64 : 96;
+  const iconSize = size === "sm" ? 32 : size === "md" ? 48 : 64;
   const titleSize = size === "sm" ? "text-xl" : size === "md" ? "text-2xl" : "text-4xl";
   const taglineSize = size === "sm" ? "text-[9px]" : size === "md" ? "text-xs" : "text-sm";
 
   return (
     <div className="flex flex-col items-center text-center gap-3">
-      <AppIcon size={iconSize} />
+      <AppIcon size={iconSize} theme={currentTheme} />
       <div className="space-y-1">
         <h2 
           className={`font-sans font-extrabold tracking-tight ${titleColor} ${titleSize}`} 
