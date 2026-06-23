@@ -22,16 +22,14 @@ export function ComplaintCard({ complaint, index = 0 }: ComplaintCardProps) {
       transition={{
         duration: 0.4,
         delay: index * 0.08,
-        ease: [0.16, 1, 0.3, 1],
+        ease: [0.16, 1, 0.3, 1] as const,
       }}
     >
       <Link
         href={`/report/${complaint.id}`}
-        className="group block rounded-[var(--radius-md)] border border-border bg-surface p-4 transition-all hover:border-border-hover hover:bg-surface-raised"
+        className="group block rounded-[var(--radius-md)] border border-border bg-surface p-4 transition-all duration-fast ease-out hover:border-primary/30 hover:bg-surface-raised hover:shadow-md hover:scale-[1.01]"
         style={{
           boxShadow: "var(--shadow-sm)",
-          transitionDuration: "var(--duration-fast)",
-          transitionTimingFunction: "var(--ease-out)",
         }}
         id={`complaint-card-${complaint.id}`}
       >

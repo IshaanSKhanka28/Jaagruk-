@@ -46,31 +46,31 @@ const AGENT_PIPELINE = [
     icon: Eye,
     title: "1. Vision Agent",
     desc: "Validates uploaded photographs instantly using computer vision, filtering spam/irrelevant uploads and identifying specific damage type & severity.",
-    color: "text-rose-500 bg-rose-500/10 border-rose-500/20",
+    color: "text-error bg-error/5 border-error/15",
   },
   {
     icon: Zap,
     title: "2. Classification Agent",
     desc: "Extracts metadata, detects categories (Roads, Water, Sanitation, Electrical) and assigns priority levels based on public safety hazards.",
-    color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+    color: "text-warning bg-warning/5 border-warning/15",
   },
   {
     icon: MapPin,
     title: "3. Routing Agent",
     desc: "Uses geolocation data to identify corresponding municipal administrative wards and forwards files directly to the respective department's officer.",
-    color: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20",
+    color: "text-primary bg-primary/5 border-primary/15",
   },
   {
     icon: Building2,
     title: "4. Complaint Agent",
     desc: "Generates structured formal letters and submissions detailing guidelines violated, and auto-submits reports into government grievance portals.",
-    color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+    color: "text-success bg-success/5 border-success/15",
   },
   {
     icon: Clock,
     title: "5. Tracking Agent",
     desc: "Monitors status changes from government APIs, alerts you of updates, and enables community upvoting to bump unresolved high-priority issues.",
-    color: "text-sky-500 bg-sky-500/10 border-sky-500/20",
+    color: "text-info bg-info/5 border-info/15",
   },
 ];
 
@@ -83,7 +83,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-20 pb-16 md:pt-32 md:pb-24 border-b border-border bg-gradient-to-b from-background via-surface/30 to-background">
         {/* Glow effect */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[300px] pointer-events-none opacity-30 dark:opacity-20 bg-radial-gradient from-primary/30 to-transparent blur-[120px]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[300px] pointer-events-none opacity-35 dark:opacity-25 bg-[radial-gradient(circle_at_center,var(--color-primary)_0%,transparent_70%)] blur-[100px]" />
 
         <div className="mx-auto max-w-[1120px] px-4 relative z-10">
           <motion.div

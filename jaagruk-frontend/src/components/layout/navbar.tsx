@@ -41,14 +41,21 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative px-3 py-1.5 text-sm font-medium rounded-[var(--radius-md)] transition-colors ${
+                className={`relative px-3 py-1.5 text-sm font-medium rounded-[var(--radius-md)] transition-colors z-10 ${
                   isActive
-                    ? "text-primary bg-primary-subtle"
-                    : "text-muted hover:text-foreground hover:bg-surface"
+                    ? "text-primary"
+                    : "text-muted hover:text-foreground hover:bg-surface/50"
                 }`}
                 style={{ transitionDuration: "var(--duration-fast)" }}
               >
-                {link.label}
+                <span className="relative z-10">{link.label}</span>
+                {isActive && (
+                  <motion.span
+                    layoutId="active-nav-pill"
+                    className="absolute inset-0 bg-primary/10 rounded-[var(--radius-md)] z-0"
+                    transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                  />
+                )}
               </Link>
             );
           })}

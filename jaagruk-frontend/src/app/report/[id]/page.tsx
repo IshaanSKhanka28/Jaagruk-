@@ -187,7 +187,7 @@ export default function ReportDetailPage() {
                 {/* Vision Audit */}
                 <div className="p-4 rounded-sm border border-border bg-background/50 space-y-2">
                   <div className="flex items-center gap-2 font-semibold text-sm text-foreground">
-                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                    <ShieldCheck className="w-4 h-4 text-success" />
                     <span>Vision Auditor</span>
                   </div>
                   <div className="text-xs space-y-1 text-muted">
@@ -200,7 +200,7 @@ export default function ReportDetailPage() {
                 {/* Classifier Audit */}
                 <div className="p-4 rounded-sm border border-border bg-background/50 space-y-2">
                   <div className="flex items-center gap-2 font-semibold text-sm text-foreground">
-                    <Globe className="w-4 h-4 text-amber-500" />
+                    <Globe className="w-4 h-4 text-warning" />
                     <span>Classification Auditor</span>
                   </div>
                   <div className="text-xs space-y-1 text-muted">
@@ -213,7 +213,7 @@ export default function ReportDetailPage() {
                 {/* Router Audit */}
                 <div className="p-4 rounded-sm border border-border bg-background/50 space-y-2">
                   <div className="flex items-center gap-2 font-semibold text-sm text-foreground">
-                    <Building className="w-4 h-4 text-indigo-500" />
+                    <Building className="w-4 h-4 text-primary" />
                     <span>Routing Auditor</span>
                   </div>
                   <div className="text-xs space-y-1 text-muted">
@@ -226,7 +226,7 @@ export default function ReportDetailPage() {
                 {/* Complaint Audit */}
                 <div className="p-4 rounded-sm border border-border bg-background/50 space-y-2">
                   <div className="flex items-center gap-2 font-semibold text-sm text-foreground">
-                    <FileSpreadsheet className="w-4 h-4 text-sky-500" />
+                    <FileSpreadsheet className="w-4 h-4 text-info" />
                     <span>Complaint Auditor</span>
                   </div>
                   <div className="text-xs space-y-1 text-muted">
