@@ -149,3 +149,40 @@ export function LogoHorizontal({ theme, size = 36 }: LogoHorizontalProps) {
     </div>
   );
 }
+
+// =============================================
+// 5. Logo Component (Theme-responsive vertical lockup)
+// =============================================
+export function Logo({ size = "md" }: LogoLockupProps) {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const currentTheme = (mounted ? resolvedTheme : "light") || "light";
+  const titleColor = currentTheme === "dark" ? "text-white" : "text-[#1D4ED8]";
+  const taglineColor = currentTheme === "dark" ? "text-[#F97316]" : "text-[#64748B]";
+
+  const iconSize = size === "sm" ? 48 : size === "md" ? 64 : 96;
+  const titleSize = size === "sm" ? "text-xl" : size === "md" ? "text-2xl" : "text-4xl";
+  const taglineSize = size === "sm" ? "text-[9px]" : size === "md" ? "text-xs" : "text-sm";
+
+  return (
+    <div className="flex flex-col items-center text-center gap-3">
+      <AppIcon size={iconSize} />
+      <div className="space-y-1">
+        <h2 
+          className={`font-sans font-extrabold tracking-tight ${titleColor} ${titleSize}`} 
+          style={{ letterSpacing: "-0.05em", lineHeight: 1 }}
+        >
+          Jaagruk
+        </h2>
+        <p className={`font-mono font-bold tracking-widest uppercase ${taglineColor} ${taglineSize}`}>
+          SEE IT. REPORT IT. FIX IT.
+        </p>
+      </div>
+    </div>
+  );
+}

@@ -249,7 +249,7 @@ export default function Home() {
             </div>
             <div className="w-full md:w-[320px] aspect-square rounded-lg overflow-hidden border border-border bg-background relative flex items-center justify-center p-8">
               {/* Symbolic visual badge */}
-              <div className="absolute inset-0 bg-radial-gradient from-accent/10 to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--color-accent)_0%,transparent_70%)] opacity-15 pointer-events-none" />
               <div className="text-center relative z-10 flex flex-col items-center">
                 <div className="w-20 h-20 rounded-full bg-accent/20 border border-accent/30 text-accent flex items-center justify-center mb-4">
                   <Award className="w-10 h-10" />
