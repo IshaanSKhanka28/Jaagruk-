@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { LogoHorizontal } from "@/components/ui/Logo";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Settings } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SettingsPanel } from "@/components/ui/SettingsPanel";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -18,6 +19,7 @@ const NAV_LINKS = [
 export function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <header
@@ -62,6 +64,16 @@ export function Navbar() {
         {/* Right side */}
         <div className="flex items-center gap-2">
           <ThemeToggle />
+
+          {/* Settings Trigger Gear Button */}
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="w-9 h-9 flex items-center justify-center rounded-[var(--radius-md)] border border-border hover:border-border-hover hover:bg-surface transition-colors focus:outline-none"
+            aria-label="Settings and accessibility preferences"
+          >
+            <Settings className="w-4 h-4 text-foreground" />
+          </button>
+
           <Link
             href="/report"
             className="hidden md:inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-[var(--radius-md)] bg-primary text-primary-foreground hover:bg-primary-hover transition-colors"
@@ -122,6 +134,9 @@ export function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Preferences / Accessibility Settings Panel Drawer */}
+      <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </header>
   );
 }

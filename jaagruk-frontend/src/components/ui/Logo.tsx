@@ -11,7 +11,7 @@ interface AppIconProps {
   theme?: "light" | "dark";
 }
 
-export function AppIcon({ size = 36, theme }: AppIconProps) {
+export function AppIcon({ size = 28, theme }: AppIconProps) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const clipId = useId();
@@ -22,55 +22,51 @@ export function AppIcon({ size = 36, theme }: AppIconProps) {
 
   const currentTheme = theme || (mounted ? resolvedTheme : "light") || "light";
   const eyeColor = currentTheme === "dark" ? "#FFFFFF" : "#1D4ED8";
-  const irisColor = currentTheme === "dark" ? "#3B82F6" : "#1D4ED8";
-
-  // Aspect ratio is 110 / 44 = 2.5
-  // If height = size, width = size * 2.5
-  const height = size;
-  const width = size * 2.5;
+  const irisColor = "#3B82F6"; // Lighter blue for high visibility
+  const pupilColor = "#1E3A8A";
 
   return (
     <svg
-      width={width}
-      height={height}
-      viewBox="45 3 110 44"
+      width={size}
+      height={size}
+      viewBox="0 0 28 28"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className="flex-shrink-0"
     >
       <defs>
         <clipPath id={clipId}>
-          <circle cx="100" cy="25" r="7" />
+          <circle cx="14" cy="14" r="4.5" />
         </clipPath>
       </defs>
 
-      {/* Eye lens outline shape (stroke-width 2.5px) */}
+      {/* Eye lens outline shape (stroke-width: 2px) */}
       <path
-        d="M 50,25 C 80,5 120,5 150,25 C 120,45 80,45 50,25 Z"
+        d="M 2,14 C 6,4 22,4 26,14 C 22,24 6,24 2,14 Z"
         stroke={eyeColor}
-        strokeWidth="2.5"
+        strokeWidth="2"
         fill="none"
       />
 
-      {/* Outer iris ring (visible blue in dark mode) */}
-      <circle cx="100" cy="25" r="14" stroke={irisColor} strokeWidth="1.5" fill="none" />
+      {/* Outer iris ring */}
+      <circle cx="14" cy="14" r="7.5" stroke={irisColor} strokeWidth="1" fill="none" />
 
-      {/* Inner iris ring (visible blue in dark mode) */}
-      <circle cx="100" cy="25" r="10" stroke={irisColor} strokeWidth="1" fill="none" />
+      {/* Inner iris ring */}
+      <circle cx="14" cy="14" r="5.5" stroke={irisColor} strokeWidth="0.8" fill="none" />
 
-      {/* Pupil with city skyline inside */}
+      {/* Pupil with city skyline inside (fill: #1E3A8A) */}
       <g clipPath={`url(#${clipId})`}>
-        <circle cx="100" cy="25" r="7" fill="#1D4ED8" />
-        {/* City skyline bars */}
-        <rect x="89" y="24" width="2" height="8" fill="white" />
-        <rect x="94" y="20" width="2" height="12" fill="white" />
-        <rect x="99" y="22" width="2" height="10" fill="white" />
-        <rect x="104" y="18" width="2" height="14" fill="white" />
-        <rect x="109" y="23" width="2" height="9" fill="white" />
+        <circle cx="14" cy="14" r="4.5" fill={pupilColor} />
+        {/* City skyline bars - white, clearly visible */}
+        <rect x="10.5" y="13" width="1" height="6" fill="white" />
+        <rect x="12" y="11" width="1" height="8" fill="white" />
+        <rect x="13.5" y="12" width="1" height="7" fill="white" />
+        <rect x="15" y="10" width="1" height="9" fill="white" />
+        <rect x="16.5" y="13" width="1" height="6" fill="white" />
       </g>
 
-      {/* Alert orange dot on the top-right lens tip (r=5 gives >=8px diameter in output) */}
-      <circle cx="146" cy="21" r="5" fill="#F97316" stroke="white" strokeWidth="1.2" />
+      {/* Alert orange dot on the top-right lens tip (8px diameter => r=4) */}
+      <circle cx="24" cy="9" r="4" fill="#F97316" />
     </svg>
   );
 }
@@ -139,7 +135,7 @@ interface LogoHorizontalProps {
   size?: number;
 }
 
-export function LogoHorizontal({ theme, size = 36 }: LogoHorizontalProps) {
+export function LogoHorizontal({ theme, size = 28 }: LogoHorizontalProps) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -148,17 +144,35 @@ export function LogoHorizontal({ theme, size = 36 }: LogoHorizontalProps) {
   }, []);
 
   const currentTheme = (theme || (mounted ? resolvedTheme : "light") || "light") as "light" | "dark";
-  const textColor = currentTheme === "dark" ? "text-white" : "text-[#1D4ED8]";
+  const isDark = currentTheme === "dark";
+
+  // Frosted glass pill style containers conforming to design specs
+  const bgStyle = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(29, 78, 216, 0.06)";
+  const borderStyle = isDark ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid rgba(29, 78, 216, 0.12)";
+  const textColor = isDark ? "text-white" : "text-[#1D4ED8]";
 
   return (
-    <div className="flex items-center gap-[10px] select-none pl-2" style={{ height: size }}>
-      <AppIcon size={size} theme={currentTheme} />
+    <div 
+      className={`flex items-center gap-[10px] select-none transition-all ${textColor}`}
+      style={{ 
+        background: bgStyle,
+        border: borderStyle,
+        borderRadius: "10px",
+        padding: "6px 12px",
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)"
+      }}
+    >
+      <AppIcon size={28} theme={currentTheme} />
       <span
-        className={`font-sans font-extrabold tracking-tight ${textColor}`}
+        className="font-sans font-extrabold tracking-tight"
         style={{
-          fontSize: "22px",
+          fontSize: "18px",
           fontWeight: 800,
-          letterSpacing: "-0.05em",
+          letterSpacing: "-0.5px",
           lineHeight: 1,
         }}
       >
@@ -204,3 +218,4 @@ export function Logo({ size = "md" }: LogoLockupProps) {
     </div>
   );
 }
+

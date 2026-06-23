@@ -257,3 +257,17 @@ p {
   background: var(--color-primary);
   color: var(--color-primary-foreground);
 }
+
+/* --- Accessibility: High Contrast Mode --- */
+.high-contrast {
+  --color-border: oklch(0.500 0.010 270);
+  --color-border-hover: oklch(0.300 0.020 270);
+  --color-muted: oklch(0.300 0.010 270);
+  filter: contrast(1.2) saturate(1.05);
+}
+
+.dark.high-contrast {
+  --color-border: oklch(0.700 0.005 270);
+  --color-border-hover: oklch(0.900 0.010 270);
+}
+
