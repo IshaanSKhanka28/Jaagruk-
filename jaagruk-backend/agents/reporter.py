@@ -1,61 +1,74 @@
 import os
 import json
-import logging
 import asyncio
 from google import genai
 from google.genai import types
+from datetime import datetime
 
-# Initialize genai client
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 async def run_reporter(issue_data: dict) -> dict:
-    """Reporter Agent: Uses Gemini 1.5 Flash to write formal civic grievance complaint text."""
     try:
-        prompt = f"""
-        Generate a formal, structured grievance complaint letter to be submitted to the municipal department: "{issue_data.get('department')}".
+        print(f"📄 Running reporter with gemini-2.5-flash")
         
-        Issue details for submission:
-        - Issue ID: {issue_data.get('id', 'N/A')}
-        - Category: {issue_data.get('category', 'OTHER')}
-        - Location Address: {issue_data.get('address', 'Not Specified')}
-        - Severity Index: {issue_data.get('severity', 1)}/5
-        - Priority Level: {issue_data.get('priority', 'LOW')}
-        - AI Validated Description: {issue_data.get('refined_description', issue_data.get('description', ''))}
-        
-        Write a professional, assertive, and direct letter requesting urgent administrative resolution.
-        - Start with a formal subject line (e.g., "Grievance Redressal: Urgent Road Maintenance Required at ...").
-        - Keep the style professional, direct, and actionable. Avoid unnecessary preachy or political statements.
-        - Add a placeholder for citizen signature/endorsement at the bottom.
-        
-        Return your response in strict JSON format matching this schema:
-        {{
-          "subject": "Clear subject line for the grievance letter",
-          "body": "The full body text of the grievance complaint letter. Use linebreaks where appropriate.",
-          "recipient": "Designated officer role (e.g. Executive Engineer, Ward Commissioner)"
-        }}
-        """
-        
-        response = await asyncio.to_thread(
-            client.models.generate_content,
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(response_mime_type="application/json")
-        )
-        
-        result = json.loads(response.text.strip())
-        logging.info(f"Reporter Agent output: {result}")
-        return result
+        prompt = f"""You are an official complaint letter generator 
+for Jaagruk, an Indian civic reporting platform.
+
+Generate a formal government complaint letter for this issue:
+
+Issue ID: {issue_data.get('id', 'JGR-001')}
+Category: {issue_data.get('category', 'POTHOLE')}
+Location: {issue_data.get('address', 'Unknown location')}
+Severity: {issue_data.get('severity', 3)}/5
+Priority: {issue_data.get('priority', 'MEDIUM')}
+Description: {issue_data.get('refined_description', 
+              issue_data.get('description', 'Civic issue reported'))}
+Department: {issue_data.get('department', 
+             'Public Works Department')}
+Date: {datetime.now().strftime('%d %B %Y')}
+
+Write a professional, formal complaint letter addressed 
+to the department head. Include:
+- Subject line
+- Formal greeting
+- Clear description of the issue
+- Location details
+- Request for urgent resolution
+- Timeline expectation
+- Closing
+
+Respond ONLY with valid JSON, no markdown:
+{{
+  "subject": "Subject line of the complaint",
+  "letter": "Full formal complaint letter text",
+  "summary": "One sentence summary",
+  "urgency": "IMMEDIATE or URGENT or STANDARD",
+  "follow_up_days": integer
+}}"""
+
+        for attempt in range(3):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=[types.Part.from_text(text=prompt)]
+                )
+                text = response.text.strip().replace("```json","").replace("```","").strip()
+                result = json.loads(text)
+                print(f"✅ Reporter result: {result}")
+                return result
+            except Exception as e:
+                if "503" in str(e) or "UNAVAILABLE" in str(e):
+                    if attempt < 2:
+                        print(f"⏳ Gemini busy, retry {attempt+1}/3...")
+                        await asyncio.sleep(5)
+                        continue
+                raise e
     except Exception as e:
-        logging.error(f"Error in Reporter Agent: {e}")
-        # Default fallback grievance content
+        print(f"❌ Reporter error: {e}")
         return {
-            "subject": f"Grievance Submission: Urgent {issue_data.get('category', 'OTHER')} attention needed",
-            "body": (
-                f"To the concerned authority at {issue_data.get('department') or 'Municipal Corporation'},\n\n"
-                f"This is an official grievance report regarding a serious {issue_data.get('category', 'OTHER')} issue located at {issue_data.get('address', 'Not Specified')}.\n\n"
-                f"Description: {issue_data.get('description') or 'No description provided'}.\n\n"
-                f"Please register this complaint under ID {issue_data.get('id', 'N/A')} and dispatch a maintenance team for correction at the earliest.\n\n"
-                f"Sincerely,\nJaagruk Citizen Representative"
-            ),
-            "recipient": "Assistant Engineer / Ward Officer"
+            "subject": f"Complaint regarding {issue_data.get('category', 'civic issue')}",
+            "letter": f"Formal complaint for issue at {issue_data.get('address', 'reported location')}.",
+            "summary": "Auto-generated complaint",
+            "urgency": "STANDARD",
+            "follow_up_days": 7
         }

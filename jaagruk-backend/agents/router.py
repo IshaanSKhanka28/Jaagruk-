@@ -1,53 +1,72 @@
 import os
 import json
-import logging
 import asyncio
 from google import genai
 from google.genai import types
 
-# Initialize genai client
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+DEPARTMENT_MAP = {
+    "POTHOLE": "Public Works Department",
+    "DAMAGED_ROAD": "Public Works Department",
+    "WATER_LEAKAGE": "Water Supply Board",
+    "BROKEN_LIGHT": "Electricity Department",
+    "GARBAGE": "Municipal Solid Waste Department",
+    "OTHER": "General Municipal Office"
+}
+
 async def run_router(category: str, address: str) -> dict:
-    """Routing Agent: Uses Gemini 1.5 Flash to determine target department and officer responsibility."""
     try:
-        prompt = f"""
-        Given a civic issue category: "{category}" and address/location details: "{address or 'Not Provided'}".
-        Determine the appropriate municipal department and officer title responsible for fixing this issue in an Indian city context.
-        For example:
-        - ROADS -> Public Works Department (PWD) / Road Maintenance Division
-        - WATER -> Municipal Water Supply and Sewerage Board
-        - SANITATION -> Municipal Corporation (Solid Waste Management Department)
-        - ELECTRICAL -> State Electricity Board / Streetlight Maintenance Division
-        - OTHER -> General Ward Administrative Officer
-        Return your response in strict JSON format matching this schema:
-        {{
-          "department": "Name of the target department",
-          "officer_role": "Responsible officer role (e.g., Executive Engineer, Assistant Engineer, Ward Inspector, Health Officer)"
-        }}
-        """
+        print(f"🔀 Running router with gemini-2.5-flash")
         
-        response = await asyncio.to_thread(
-            client.models.generate_content,
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(response_mime_type="application/json")
-        )
+        department = DEPARTMENT_MAP.get(category, "General Municipal Office")
         
-        result = json.loads(response.text.strip())
-        logging.info(f"Router Agent output: {result}")
-        return result
+        prompt = f"""You are a civic issue router for Jaagruk, an Indian civic platform.
+
+Issue details:
+- Category: {category}
+- Location: {address}
+- Department: {department}
+
+Determine the routing decision and priority.
+
+Priority rules:
+- HIGH: immediate safety risk, blocking roads, no water supply
+- MEDIUM: inconvenience, affects daily life
+- LOW: minor aesthetic issues
+
+Respond ONLY with valid JSON, no markdown:
+{{
+  "department": "{department}",
+  "priority": "HIGH or MEDIUM or LOW",
+  "reasoning": "one sentence explaining why",
+  "estimated_resolution_days": integer,
+  "escalation_required": boolean
+}}"""
+
+        for attempt in range(3):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=[types.Part.from_text(text=prompt)]
+                )
+                text = response.text.strip().replace("```json","").replace("```","").strip()
+                result = json.loads(text)
+                print(f"✅ Router result: {result}")
+                return result
+            except Exception as e:
+                if "503" in str(e) or "UNAVAILABLE" in str(e):
+                    if attempt < 2:
+                        print(f"⏳ Gemini busy, retry {attempt+1}/3...")
+                        await asyncio.sleep(5)
+                        continue
+                raise e
     except Exception as e:
-        logging.error(f"Error in Routing Agent: {e}")
-        # Default fallback based on category
-        dept_map = {
-            "ROADS": ("Public Works Department (PWD)", "Assistant Engineer (Roads)"),
-            "WATER": ("Water Supply & Sewerage Board", "Sub-Divisional Engineer"),
-            "SANITATION": ("Municipal Solid Waste Dept", "Sanitary Inspector"),
-            "ELECTRICAL": ("Electricity Board (EB)", "Assistant Engineer (Electrical)"),
-        }
-        dept, role = dept_map.get(category, ("General Municipal Corporation", "Ward Officer"))
+        print(f"❌ Router error: {e}")
         return {
-            "department": dept,
-            "officer_role": role
+            "department": DEPARTMENT_MAP.get(category, "General Municipal Office"),
+            "priority": "MEDIUM",
+            "reasoning": f"Auto-routed based on category: {str(e)}",
+            "estimated_resolution_days": 7,
+            "escalation_required": False
         }
