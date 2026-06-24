@@ -33,11 +33,11 @@ async def validate_issue(image_url: str, description: str = "") -> dict:
 
 async def run_validator(image_bytes: bytes, description: str = "") -> dict:
     try:
-        print(f"🔍 Running validator with gemini-2.5-flash")
+        print(f"🔍 Running validator with gemini-2.0-flash-lite")
         for attempt in range(3):
             try:
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model="gemini-2.0-flash-lite",
                     contents=[
                         types.Part.from_bytes(
                             data=image_bytes,

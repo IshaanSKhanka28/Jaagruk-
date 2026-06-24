@@ -17,7 +17,7 @@ DEPARTMENT_MAP = {
 
 async def run_router(category: str, address: str) -> dict:
     try:
-        print(f"🔀 Running router with gemini-2.5-flash")
+        print(f"🔀 Running router with gemini-2.0-flash-lite")
         
         department = DEPARTMENT_MAP.get(category, "General Municipal Office")
         
@@ -47,7 +47,7 @@ Respond ONLY with valid JSON, no markdown:
         for attempt in range(3):
             try:
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model="gemini-2.0-flash-lite",
                     contents=[types.Part.from_text(text=prompt)]
                 )
                 text = response.text.strip().replace("```json","").replace("```","").strip()
