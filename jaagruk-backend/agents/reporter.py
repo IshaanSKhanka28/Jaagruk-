@@ -2,18 +2,15 @@ import os
 import json
 import logging
 import asyncio
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
-# Initialize genai
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+# Initialize genai client
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 async def run_reporter(issue_data: dict) -> dict:
     """Reporter Agent: Uses Gemini 1.5 Flash to write formal civic grievance complaint text."""
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
         prompt = f"""
         Generate a formal, structured grievance complaint letter to be submitted to the municipal department: "{issue_data.get('department')}".
         
@@ -39,9 +36,10 @@ async def run_reporter(issue_data: dict) -> dict:
         """
         
         response = await asyncio.to_thread(
-            model.generate_content,
-            prompt,
-            generation_config={"response_mime_type": "application/json"}
+            client.models.generate_content,
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(response_mime_type="application/json")
         )
         
         result = json.loads(response.text.strip())

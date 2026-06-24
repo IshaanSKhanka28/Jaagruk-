@@ -2,18 +2,15 @@ import os
 import json
 import logging
 import asyncio
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
-# Initialize genai
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+# Initialize genai client
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 async def run_router(category: str, address: str) -> dict:
     """Routing Agent: Uses Gemini 1.5 Flash to determine target department and officer responsibility."""
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
         prompt = f"""
         Given a civic issue category: "{category}" and address/location details: "{address or 'Not Provided'}".
         Determine the appropriate municipal department and officer title responsible for fixing this issue in an Indian city context.
@@ -31,9 +28,10 @@ async def run_router(category: str, address: str) -> dict:
         """
         
         response = await asyncio.to_thread(
-            model.generate_content,
-            prompt,
-            generation_config={"response_mime_type": "application/json"}
+            client.models.generate_content,
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(response_mime_type="application/json")
         )
         
         result = json.loads(response.text.strip())
