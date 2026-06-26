@@ -46,6 +46,12 @@ export default function ReportPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
+  // Geolocation state
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [locationDetected, setLocationDetected] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
+
   // Submission & SDK uploading states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -74,6 +80,49 @@ export default function ReportPage() {
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     setPinCoords({ x, y });
     setAddress(`Plot ${Math.floor(x * 5)}, ${city === "Bangalore" ? "Indiranagar" : "Juhu"}, ${city}`);
+    // Keep coordinates in sync with the manually dropped pin
+    setLat(12.9716 + (y - 50) / 1000);
+    setLng(77.5946 + (x - 50) / 1000);
+    setLocationDetected(false);
+  };
+
+  const handleUseMyLocation = () => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      showToast("Please enter your location manually", "error");
+      return;
+    }
+
+    setDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          // Reverse geocode to get a human-readable address (Nominatim, no API key)
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+          );
+          const data = await response.json();
+          const detected =
+            data.display_name ||
+            `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+          setAddress(detected);
+        } catch (err) {
+          console.error("Reverse geocode failed:", err);
+          // Fall back to raw coordinates if geocoding fails
+          setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        } finally {
+          setLat(latitude);
+          setLng(longitude);
+          setLocationDetected(true);
+          setDetectingLocation(false);
+        }
+      },
+      () => {
+        setDetectingLocation(false);
+        showToast("Please enter your location manually", "error");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -138,15 +187,12 @@ export default function ReportPage() {
         return;
       }
 
-      const latVal = 12.9716 + (pinCoords.y - 50) / 1000;
-      const lngVal = 77.5946 + (pinCoords.x - 50) / 1000;
-
       const issuePayload = {
         image_url: imageUrl,
         description: `${title}\n\n${description}`,
         address,
-        lat: latVal,
-        lng: lngVal,
+        lat: lat || undefined,
+        lng: lng || undefined,
         citizen_id: "anonymous"
       };
 
@@ -277,6 +323,31 @@ export default function ReportPage() {
 
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-foreground">Detected Address</label>
+                    <button
+                      type="button"
+                      onClick={handleUseMyLocation}
+                      disabled={detectingLocation}
+                      className="w-full h-12 px-4 inline-flex items-center justify-center gap-2 rounded-sm border border-primary bg-primary-subtle text-primary font-semibold hover:bg-primary/10 disabled:opacity-60 disabled:pointer-events-none transition-all select-none"
+                      aria-label={screenReader ? "Detect my current location using browser geolocation" : "Use my location"}
+                      aria-busy={detectingLocation}
+                    >
+                      {detectingLocation ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          📍 Detecting location...
+                        </>
+                      ) : (
+                        <>
+                          <MapPin className="w-4 h-4" />
+                          Use My Location
+                        </>
+                      )}
+                    </button>
+                    {locationDetected && (
+                      <p className="text-xs font-semibold text-success flex items-center gap-1.5" role="status">
+                        <Check className="w-3.5 h-3.5" /> ✅ Location detected
+                      </p>
+                    )}
                     <input
                       type="text"
                       value={address}
