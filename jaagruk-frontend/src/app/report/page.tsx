@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAccessibility } from "@/hooks/useAccessibility";
 import {
@@ -23,6 +24,11 @@ import {
 } from "lucide-react";
 import { CATEGORY_META, ComplaintCategory } from "@/lib/mock-data";
 import { uploadImage, createIssue } from "@/lib/api";
+
+// Leaflet relies on `window`, so load the preview map client-side only
+const LocationPreviewMap = dynamic(() => import("./LocationPreviewMap"), {
+  ssr: false,
+});
 
 const STEPS = [
   { id: "location", title: "Location", icon: MapPin },
@@ -49,6 +55,8 @@ export default function ReportPage() {
   // Geolocation state
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
+  const [area, setArea] = useState("");
+  const [pincode, setPincode] = useState("");
   const [locationDetected, setLocationDetected] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
 
@@ -83,6 +91,8 @@ export default function ReportPage() {
     // Keep coordinates in sync with the manually dropped pin
     setLat(12.9716 + (y - 50) / 1000);
     setLng(77.5946 + (x - 50) / 1000);
+    setArea("");
+    setPincode("");
     setLocationDetected(false);
   };
 
@@ -99,17 +109,38 @@ export default function ReportPage() {
         try {
           // Reverse geocode to get a human-readable address (Nominatim, no API key)
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`
           );
           const data = await response.json();
-          const detected =
-            data.display_name ||
-            `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-          setAddress(detected);
+          const addr = data.address || {};
+
+          // Extract specific fields, with sensible fallbacks
+          const detectedCity =
+            addr.city || addr.town || addr.village || addr.county || "";
+          const detectedArea =
+            addr.suburb || addr.neighbourhood || addr.road || "";
+          const detectedState = addr.state || "";
+          const detectedPincode = addr.postcode || "";
+
+          // Build a clean, short address from the most useful parts
+          const shortAddress = [detectedArea, detectedCity, detectedState]
+            .filter(Boolean)
+            .join(", ");
+
+          setAddress(
+            shortAddress ||
+              data.display_name ||
+              `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+          );
+          if (detectedCity) setCity(detectedCity);
+          setArea(detectedArea);
+          setPincode(detectedPincode);
         } catch (err) {
           console.error("Reverse geocode failed:", err);
           // Fall back to raw coordinates if geocoding fails
           setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+          setArea("");
+          setPincode("");
         } finally {
           setLat(latitude);
           setLng(longitude);
@@ -356,6 +387,50 @@ export default function ReportPage() {
                       className="w-full h-12 px-3 rounded-sm border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary focus:outline-none text-foreground transition-all"
                       aria-label={screenReader ? "Confirm or write the detected address location details" : "Street address"}
                     />
+
+                    {/* Detected location detail chips */}
+                    {locationDetected && (area || city || pincode) && (
+                      <div className="flex gap-2 flex-wrap mt-2">
+                        {area && (
+                          <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full px-3 py-1 text-xs">
+                            📍 {area}
+                          </span>
+                        )}
+                        {city && (
+                          <span className="bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-full px-3 py-1 text-xs">
+                            🏙️ {city}
+                          </span>
+                        )}
+                        {pincode && (
+                          <span className="bg-green-500/10 text-green-400 border border-green-500/20 rounded-full px-3 py-1 text-xs">
+                            📮 {pincode}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Inline map preview of the detected location */}
+                    {locationDetected && lat && lng && (
+                      <div className="mt-4">
+                        <p className="text-xs text-muted mb-2">📍 Your location on map</p>
+                        <LocationPreviewMap lat={lat} lng={lng} address={address} />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLocationDetected(false);
+                            setLat(null);
+                            setLng(null);
+                            setAddress("");
+                            setCity("");
+                            setArea("");
+                            setPincode("");
+                          }}
+                          className="text-xs text-muted hover:text-foreground mt-2 underline"
+                        >
+                          Wrong location? Enter manually
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}

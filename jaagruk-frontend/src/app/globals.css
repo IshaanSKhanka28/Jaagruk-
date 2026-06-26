@@ -271,3 +271,9 @@ p {
   --color-border-hover: oklch(0.900 0.010 270);
 }
 
+
+/* Leaflet custom SVG markers: drop the default white divIcon box */
+.custom-leaflet-marker {
+  background: transparent;
+  border: none;
+}
