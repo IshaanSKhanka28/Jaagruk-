@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
@@ -45,7 +45,6 @@ export default function ReportPage() {
   // Form State
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("Bangalore");
-  const [pinCoords, setPinCoords] = useState({ x: 50, y: 50 }); // percentages on map
   const [category, setCategory] = useState<ComplaintCategory | "">("");
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoName, setPhotoName] = useState("");
@@ -73,27 +72,6 @@ export default function ReportPage() {
   const showToast = (message: string, type: "success" | "error" = "error") => {
     setToastMessage(message);
     setToastType(type);
-  };
-
-  // Auto-fill coordinates & address mock simulation
-  useEffect(() => {
-    if (address === "") {
-      setAddress("12th Main Road, Hal 2nd Stage, Indiranagar");
-    }
-  }, []);
-
-  const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setPinCoords({ x, y });
-    setAddress(`Plot ${Math.floor(x * 5)}, ${city === "Bangalore" ? "Indiranagar" : "Juhu"}, ${city}`);
-    // Keep coordinates in sync with the manually dropped pin
-    setLat(12.9716 + (y - 50) / 1000);
-    setLng(77.5946 + (x - 50) / 1000);
-    setArea("");
-    setPincode("");
-    setLocationDetected(false);
   };
 
   const handleUseMyLocation = () => {
@@ -314,42 +292,6 @@ export default function ReportPage() {
                       <option value="Mumbai">Mumbai</option>
                       <option value="Delhi">Delhi</option>
                     </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">Drop Pin on Map</label>
-                    <p className="text-xs text-muted mb-2">Click anywhere on the grid below to simulate location mapping.</p>
-                    <div
-                      onClick={handleMapClick}
-                      className="w-full h-44 border border-border bg-background/50 rounded-sm relative overflow-hidden cursor-crosshair group flex items-center justify-center"
-                      style={{
-                        backgroundImage: "radial-gradient(var(--color-border) 1px, transparent 1px)",
-                        backgroundSize: "20px 20px",
-                      }}
-                      role="application"
-                      aria-label="Simulation grid map coordinate planner"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-border/10 to-transparent pointer-events-none" />
-                      
-                      {/* Simple mock streets */}
-                      <div className="absolute left-[30%] top-0 w-4 h-full bg-border/20" />
-                      <div className="absolute left-[70%] top-0 w-4 h-full bg-border/20" />
-                      <div className="absolute left-0 top-[40%] w-full h-4 bg-border/20" />
-                      
-                      <div className="absolute text-[10px] text-muted bottom-2 right-2 font-mono select-none">
-                        LAT: {(12.9 + pinCoords.y / 1000).toFixed(4)}, LNG: {(77.5 + pinCoords.x / 1000).toFixed(4)}
-                      </div>
-
-                      {/* Drop Pin */}
-                      <motion.div
-                        animate={reducedMotion ? {} : { y: [0, -4, 0] }}
-                        transition={{ repeat: Infinity, duration: 1.5 }}
-                        className="absolute text-accent"
-                        style={{ left: `${pinCoords.x}%`, top: `${pinCoords.y}%`, transform: "translate(-50%, -100%)", willChange: "transform" }}
-                      >
-                        <MapPin className="w-8 h-8 fill-accent/20" />
-                      </motion.div>
-                    </div>
                   </div>
 
                   <div className="space-y-2">
