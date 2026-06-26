@@ -1,33 +1,147 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAccessibility } from "@/hooks/useAccessibility";
 import {
   Search,
-  Filter,
   MapPin,
   ArrowRight,
   Compass,
-  Layers,
   AlertCircle,
 } from "lucide-react";
-import { MOCK_COMPLAINTS, CATEGORY_META, Complaint } from "@/lib/mock-data";
+import { MOCK_COMPLAINTS, CATEGORY_META, Complaint, ComplaintCategory, ComplaintStatus } from "@/lib/mock-data";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { getIssues } from "@/lib/api";
+
+const Map = dynamic(() => import("./Map"), { ssr: false });
+
+function mapBackendCategory(category: string): ComplaintCategory {
+  const c = (category || "").toLowerCase().replace(/_/g, "-");
+  if (c === "damaged-road") return "pothole";
+  if (c === "broken-light") return "streetlight";
+  if (c === "pothole" || c === "water-leakage" || c === "streetlight" || c === "garbage" || c === "electrical" || c === "drainage" || c === "other") {
+    return c;
+  }
+  return "other";
+}
+
+function mapBackendStatus(status: string): ComplaintStatus {
+  const s = (status || "").toLowerCase().replace(/_/g, "-");
+  if (s === "open" || s === "submitted") return "submitted";
+  if (s === "in-progress") return "in-progress";
+  if (s === "resolved") return "resolved";
+  if (s === "rejected") return "rejected";
+  return "submitted";
+}
 
 export default function MapPage() {
   const { screenReader } = useAccessibility();
   const [selectedCity, setSelectedCity] = useState("Bangalore");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(MOCK_COMPLAINTS[0]);
+  const [selectedComplaint, setSelectedComplaint] = useState<any | null>(null);
 
-  // Map settings
-  const [mapType, setMapType] = useState<"vector" | "satellite">("vector");
+  const [issues, setIssues] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Filter complaints based on city, category, and search query
+  const fetchIssues = async () => {
+    try {
+      const allIssues = await getIssues();
+      setIssues(allIssues || []);
+      setIsLoading(false);
+    } catch (e) {
+      console.error("Failed to fetch issues in map page:", e);
+      setIsLoading(false);
+    }
+  };
+
+  // Poll issues every 30 seconds
+  useEffect(() => {
+    fetchIssues();
+    const interval = setInterval(fetchIssues, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Format backend issues to match Complaint type
+  const formattedComplaints = useMemo(() => {
+    return issues.map((issue) => {
+      const cat = mapBackendCategory(issue.category);
+      const stat = mapBackendStatus(issue.status);
+      let title = "Civic Grievance";
+      let desc = issue.description || "";
+      if (desc.includes("\n\n")) {
+        title = desc.split("\n\n")[0];
+        desc = desc.split("\n\n").slice(1).join("\n\n");
+      } else if (desc.length > 50) {
+        title = desc.substring(0, 47) + "...";
+      } else if (desc.length > 0) {
+        title = desc;
+      }
+      
+      return {
+        id: String(issue.id),
+        title,
+        description: desc,
+        category: cat,
+        status: stat,
+        location: {
+          address: issue.address || "Unknown Address",
+          city: "Bangalore",
+          lat: issue.lat,
+          lng: issue.lng
+        },
+        imageUrl: issue.image_url,
+        upvotes: issue.upvotes || 0,
+        severity: issue.severity || 1,
+        priority: issue.priority || "LOW",
+        department: issue.department || "",
+        agentLog: issue.agent_log
+      };
+    });
+  }, [issues]);
+
+  const cityCenters: Record<string, [number, number]> = {
+    Bangalore: [12.9716, 77.5946],
+    Mumbai: [19.0760, 72.8777],
+    Delhi: [28.6139, 77.2090]
+  };
+
+  // Filter complaints dynamically
   const filteredComplaints = useMemo(() => {
+    return formattedComplaints.filter((c) => {
+      if (c.location.lat == null || c.location.lng == null) return false;
+
+      const centerCoord = cityCenters[selectedCity];
+      let matchesCity = false;
+      if (centerCoord) {
+        const dist = Math.sqrt(Math.pow(c.location.lat - centerCoord[0], 2) + Math.pow(c.location.lng - centerCoord[1], 2));
+        matchesCity = dist < 0.6;
+      }
+      if (!matchesCity && c.location.address) {
+        matchesCity = c.location.address.toLowerCase().includes(selectedCity.toLowerCase());
+      }
+
+      const matchesCategory = selectedCategory === "all" || c.category === selectedCategory;
+
+      const matchesSearch =
+        !searchQuery ||
+        c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.location.address.toLowerCase().includes(searchQuery.toLowerCase());
+
+      return matchesCity && matchesCategory && matchesSearch;
+    });
+  }, [formattedComplaints, selectedCity, selectedCategory, searchQuery]);
+
+  // Fallback to static mock complaints if database is empty
+  const displayComplaints = useMemo(() => {
+    if (filteredComplaints.length > 0) return filteredComplaints;
+    
+    // Return empty list during initial load, else return filtered mock complaints
+    if (isLoading && issues.length === 0) return [];
+    
     return MOCK_COMPLAINTS.filter((c) => {
       const matchesCity = c.location.city.toLowerCase() === selectedCity.toLowerCase();
       const matchesCategory = selectedCategory === "all" || c.category === selectedCategory;
@@ -36,34 +150,14 @@ export default function MapPage() {
         c.location.address.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCity && matchesCategory && matchesSearch;
     });
-  }, [selectedCity, selectedCategory, searchQuery]);
+  }, [filteredComplaints, isLoading, issues, selectedCity, selectedCategory, searchQuery]);
 
-  // Standardize positions for map visualization (scaled coordinates inside a bounding box)
-  const mappedPoints = useMemo(() => {
-    if (filteredComplaints.length === 0) return [];
-    
-    // Find bounds
-    const lats = filteredComplaints.map((c) => c.location.lat);
-    const lngs = filteredComplaints.map((c) => c.location.lng);
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
-    const minLng = Math.min(...lngs);
-    const maxLng = Math.max(...lngs);
-
-    const latRange = maxLat - minLat || 1;
-    const lngRange = maxLng - minLng || 1;
-
-    return filteredComplaints.map((c) => {
-      // Map coordinates to percentage coordinates (between 15% and 85% to keep away from edges)
-      const y = 85 - ((c.location.lat - minLat) / latRange) * 70; // invert latitude for screen y
-      const x = 15 + ((c.location.lng - minLng) / lngRange) * 70;
-      return {
-        ...c,
-        mapX: x,
-        mapY: y,
-      };
-    });
-  }, [filteredComplaints]);
+  // Set default selected complaint if none active
+  useEffect(() => {
+    if (displayComplaints.length > 0 && !selectedComplaint) {
+      setSelectedComplaint(displayComplaints[0]);
+    }
+  }, [displayComplaints, selectedComplaint]);
 
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-64px)] overflow-hidden">
@@ -73,7 +167,7 @@ export default function MapPage() {
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold tracking-tight">Civic Radar</h1>
             
-            {/* City Selector (Touch Target: 48px height) */}
+            {/* City Selector */}
             <select
               value={selectedCity}
               onChange={(e) => {
@@ -86,10 +180,11 @@ export default function MapPage() {
             >
               <option value="Bangalore">Bangalore</option>
               <option value="Mumbai">Mumbai</option>
+              <option value="Delhi">Delhi</option>
             </select>
           </div>
 
-          {/* Search bar (Touch Target: 48px height) */}
+          {/* Search bar */}
           <div className="relative">
             <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
@@ -103,11 +198,11 @@ export default function MapPage() {
             />
           </div>
 
-          {/* Category Filter Pills (Touch Target: 48px height touch points) */}
+          {/* Category Filter Pills */}
           <div className="flex gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
             <button
               onClick={() => setSelectedCategory("all")}
-              className={`px-4 h-12 flex items-center justify-center rounded-full text-xs font-bold whitespace-nowrap transition-colors border select-none ${
+              className={`px-4 h-12 flex items-center justify-center rounded-full text-xs font-bold whitespace-nowrap transition-colors border select-none cursor-pointer ${
                 selectedCategory === "all"
                   ? "bg-primary border-primary text-primary-foreground"
                   : "bg-background border-border hover:bg-border/20 text-muted hover:text-foreground"
@@ -122,7 +217,7 @@ export default function MapPage() {
               <button
                 key={key}
                 onClick={() => setSelectedCategory(key)}
-                className={`px-4 h-12 flex items-center justify-center rounded-full text-xs font-bold whitespace-nowrap transition-colors border select-none ${
+                className={`px-4 h-12 flex items-center justify-center rounded-full text-xs font-bold whitespace-nowrap transition-colors border select-none cursor-pointer ${
                   selectedCategory === key
                     ? "bg-primary border-primary text-primary-foreground"
                     : "bg-background border-border hover:bg-border/20 text-muted hover:text-foreground"
@@ -139,15 +234,90 @@ export default function MapPage() {
 
         {/* Complaints List Area */}
         <div className="flex-1 overflow-y-auto divide-y divide-border/60">
-          {filteredComplaints.length === 0 ? (
+          {selectedComplaint ? (
+            <div className="p-5 space-y-6">
+              {/* Back Button */}
+              <button
+                onClick={() => setSelectedComplaint(null)}
+                className="h-10 px-4 flex items-center justify-center gap-2 border border-border hover:bg-border/20 rounded-md text-xs font-bold transition-colors select-none cursor-pointer text-muted hover:text-foreground w-full"
+                aria-label="Back to complaints list"
+              >
+                <span>← Back to List</span>
+              </button>
+
+              {/* Image */}
+              {selectedComplaint.imageUrl && (
+                <div className="w-full h-44 rounded-md overflow-hidden border border-border bg-background select-none">
+                  <img
+                    src={selectedComplaint.imageUrl}
+                    alt={selectedComplaint.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+
+              {/* Category & Status */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold text-muted uppercase tracking-wider">
+                  {CATEGORY_META[selectedComplaint.category as ComplaintCategory]?.label || selectedComplaint.category}
+                </span>
+                <StatusBadge status={selectedComplaint.status as ComplaintStatus} size="sm" />
+              </div>
+
+              {/* Title & Description */}
+              <div className="space-y-2">
+                <h3 className="font-extrabold text-base text-foreground leading-tight">
+                  {selectedComplaint.title}
+                </h3>
+                <p className="text-xs text-muted leading-relaxed whitespace-pre-wrap max-h-[120px] overflow-y-auto pr-1">
+                  {selectedComplaint.description || "No description provided."}
+                </p>
+              </div>
+
+              {/* Severity Level */}
+              <div className="space-y-1.5 border-t border-border/40 pt-4">
+                <div className="text-[10px] uppercase font-bold text-muted">Severity Level</div>
+                <div className="flex items-center gap-1.5">
+                  {[1, 2, 3, 4, 5].map((dot) => (
+                    <span
+                      key={dot}
+                      className={`w-3 h-3 rounded-full border ${
+                        dot <= (selectedComplaint.severity || 1)
+                          ? "bg-error border-error"
+                          : "bg-transparent border-muted/30"
+                      }`}
+                    />
+                  ))}
+                  <span className="text-xs font-bold text-muted font-mono ml-2">
+                    {selectedComplaint.severity || 1}/5
+                  </span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="border-t border-border/40 pt-4 space-y-3">
+                <div className="flex items-center justify-between text-xs text-muted font-mono">
+                  <span>ID: {selectedComplaint.id}</span>
+                </div>
+                <Link
+                  href={`/report/${selectedComplaint.id}`}
+                  className="w-full h-12 flex items-center justify-center gap-2 rounded-md bg-primary hover:bg-primary/95 text-primary-foreground text-sm font-bold transition-all select-none cursor-pointer"
+                  aria-label="Track agent pipeline details"
+                >
+                  <span>Track Agent Pipeline</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+          ) : displayComplaints.length === 0 ? (
             <div className="p-8 text-center space-y-2">
               <AlertCircle className="w-8 h-8 text-muted mx-auto animate-pulse" />
               <div className="text-sm font-semibold text-muted">No reports found</div>
               <div className="text-xs text-muted/80">Try adjusting your filters or search terms.</div>
             </div>
           ) : (
-            filteredComplaints.map((c) => {
-              const meta = CATEGORY_META[c.category];
+            displayComplaints.map((c) => {
+              const meta = CATEGORY_META[c.category as ComplaintCategory];
               const isSelected = selectedComplaint?.id === c.id;
 
               return (
@@ -168,7 +338,7 @@ export default function MapPage() {
                     <span className="text-xs font-semibold text-muted uppercase tracking-wider flex items-center gap-1.5">
                       <span className="text-base">{meta?.icon}</span> {meta?.label}
                     </span>
-                    <StatusBadge status={c.status} size="sm" />
+                    <StatusBadge status={c.status as ComplaintStatus} size="sm" />
                   </div>
                   <h4 className="font-bold text-sm text-foreground truncate mb-1">{c.title}</h4>
                   <div className="flex items-center justify-between text-xs text-muted font-mono">
@@ -184,7 +354,7 @@ export default function MapPage() {
         </div>
       </div>
 
-      {/* Right Area: Interactive Simulated Vector Map */}
+      {/* Right Area: Leaflet Map */}
       <div className="flex-1 bg-background relative flex flex-col">
         {/* Map Header Status Controls */}
         <div className="absolute top-4 left-4 z-20 flex gap-2">
@@ -192,152 +362,17 @@ export default function MapPage() {
             <Compass className="w-3.5 h-3.5 text-primary animate-spin" style={{ animationDuration: "12s" }} />
             <span>Civic-Scanner active</span>
           </div>
-          <button
-            onClick={() => setMapType((prev) => (prev === "vector" ? "satellite" : "vector"))}
-            className="bg-surface/90 border border-border backdrop-blur-md px-4 h-12 rounded-md flex items-center gap-2 text-xs font-semibold shadow-sm hover:bg-border/20 transition-colors"
-            aria-label={screenReader ? "Toggle visual map style between satellite and vector layout" : "Change map style"}
-          >
-            <Layers className="w-3.5 h-3.5 text-primary" />
-            <span>Map style: {mapType}</span>
-          </button>
         </div>
 
-        {/* Map Grid Rendering */}
-        <div
-          className="flex-1 w-full relative overflow-hidden flex items-center justify-center select-none"
-          style={{
-            backgroundColor: mapType === "vector" ? "var(--color-bg)" : "oklch(0.080 0.000 0)",
-            backgroundImage:
-              mapType === "vector"
-                ? "radial-gradient(var(--color-border) 1.5px, transparent 1.5px)"
-                : "radial-gradient(oklch(0.180 0.005 270) 1px, transparent 1px)",
-            backgroundSize: "24px 24px",
-          }}
-        >
-          {/* Mock Street Overlay */}
-          <div className={`absolute inset-0 opacity-20 pointer-events-none transition-opacity ${mapType === "vector" ? "dark:opacity-10" : "opacity-30"}`}>
-            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-              <line x1="10%" y1="0%" x2="10%" y2="100%" stroke="var(--color-muted)" strokeWidth="1" />
-              <line x1="35%" y1="0%" x2="35%" y2="100%" stroke="var(--color-muted)" strokeWidth="1" />
-              <line x1="55%" y1="0%" x2="55%" y2="100%" stroke="var(--color-muted)" strokeWidth="1" strokeDasharray="5,5" />
-              <line x1="80%" y1="0%" x2="80%" y2="100%" stroke="var(--color-muted)" strokeWidth="1" />
-              <line x1="0%" y1="20%" x2="100%" y2="20%" stroke="var(--color-muted)" strokeWidth="1" />
-              <line x1="0%" y1="45%" x2="100%" y2="45%" stroke="var(--color-muted)" strokeWidth="1.5" />
-              <line x1="0%" y1="75%" x2="100%" y2="75%" stroke="var(--color-muted)" strokeWidth="1" />
-            </svg>
-          </div>
-
-          {/* Compass / Coordinate HUD overlay */}
-          <div className="absolute bottom-4 right-4 text-[10px] font-mono text-muted/60 bg-surface/50 border border-border/40 px-2 py-1 rounded pointer-events-none">
-            GEO: {selectedCity === "Bangalore" ? "12.9716° N, 77.5946° E" : "19.0760° N, 72.8777° E"}
-          </div>
-
-          {/* Render Pulsing Pins */}
-          {mappedPoints.map((pt) => {
-            const meta = CATEGORY_META[pt.category];
-            const isSelected = selectedComplaint?.id === pt.id;
-
-            return (
-              <div
-                key={pt.id}
-                className="absolute transition-all duration-normal"
-                style={{
-                  left: `${pt.mapX}%`,
-                  top: `${pt.mapY}%`,
-                  transform: "translate(-50%, -50%)",
-                }}
-              >
-                {/* Click target wrapper (Touch Target compliance) */}
-                <button
-                  onClick={() => setSelectedComplaint(pt)}
-                  className="relative group p-6 -m-6 focus:outline-none"
-                  aria-label={`Select report pin: ${pt.title}`}
-                  aria-pressed={isSelected}
-                >
-                  {/* Outer Pulsing Aura */}
-                  {isSelected && (
-                    <motion.span
-                      layoutId="pulse-aura"
-                      animate={{ scale: [1, 2.2, 1], opacity: [0.6, 0, 0.6] }}
-                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                      className="absolute inset-0 m-auto w-10 h-10 rounded-full pointer-events-none bg-primary/20"
-                      style={{ willChange: "transform, opacity" }}
-                    />
-                  )}
-
-                  {/* Pin Dot */}
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center shadow-lg transition-transform duration-fast hover:scale-125 border ${
-                      isSelected
-                        ? "bg-primary border-primary-foreground text-primary-foreground scale-110"
-                        : "bg-surface border-border text-foreground hover:bg-surface-raised"
-                    }`}
-                  >
-                    <span className="text-sm leading-none">{meta?.icon || "📍"}</span>
-                  </div>
-
-                  {/* Tiny label on hover */}
-                  <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block bg-surface border border-border text-[10px] font-bold px-2 py-0.5 rounded shadow-md whitespace-nowrap text-foreground">
-                    {pt.title.substring(0, 15)}...
-                  </span>
-                </button>
-              </div>
-            );
-          })}
+        {/* Dynamic Leaflet Map */}
+        <div className="flex-1 w-full relative overflow-hidden z-0">
+          <Map
+            issues={displayComplaints}
+            selectedCity={selectedCity}
+            selectedComplaint={selectedComplaint}
+            setSelectedComplaint={setSelectedComplaint}
+          />
         </div>
-
-        {/* Selected Complaint Detail Popover Drawer */}
-        <AnimatePresence>
-          {selectedComplaint && (
-            <motion.div
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute bottom-4 left-4 right-4 z-20 mx-auto max-w-[500px]"
-              style={{ willChange: "transform, opacity" }}
-            >
-              <div className="bg-surface/95 border border-border backdrop-blur-md rounded-lg p-5 shadow-lg flex gap-4">
-                {/* Left side preview image */}
-                <div className="w-20 h-20 rounded-sm overflow-hidden border border-border flex-shrink-0 bg-background select-none">
-                  <img
-                    src={selectedComplaint.imageUrl}
-                    alt={selectedComplaint.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {/* Right side text detail */}
-                <div className="flex-1 min-w-0 space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-muted uppercase tracking-wider">
-                      {CATEGORY_META[selectedComplaint.category]?.label}
-                    </span>
-                    <StatusBadge status={selectedComplaint.status} size="sm" />
-                  </div>
-                  <h3 className="font-bold text-sm text-foreground truncate">
-                    {selectedComplaint.title}
-                  </h3>
-                  <div className="flex items-center gap-2 text-xs text-muted">
-                    <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-primary" />
-                    <span className="truncate">{selectedComplaint.location.address}</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-border/30">
-                    <span className="text-[10px] font-mono text-muted">{selectedComplaint.id}</span>
-                    <Link
-                      href={`/report/${selectedComplaint.id}`}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary-hover transition-colors h-10 px-2 rounded hover:bg-primary/5"
-                      aria-label="Navigate to agent pipeline details for this complaint"
-                    >
-                      <span>Track Agent Pipeline</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </div>
   );

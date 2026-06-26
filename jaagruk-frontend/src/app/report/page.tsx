@@ -22,6 +22,7 @@ import {
   Clock,
 } from "lucide-react";
 import { CATEGORY_META, ComplaintCategory } from "@/lib/mock-data";
+import { uploadImage, createIssue } from "@/lib/api";
 
 const STEPS = [
   { id: "location", title: "Location", icon: MapPin },
@@ -45,9 +46,20 @@ export default function ReportPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  // Submission & AI pipeline simulation states
+  // Submission & SDK uploading states
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pipelineStep, setPipelineStep] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Custom Toast States
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<"success" | "error">("error");
+
+  const showToast = (message: string, type: "success" | "error" = "error") => {
+    setToastMessage(message);
+    setToastType(type);
+  };
 
   // Auto-fill coordinates & address mock simulation
   useEffect(() => {
@@ -68,17 +80,16 @@ export default function ReportPage() {
     const file = e.target.files?.[0];
     if (file) {
       setPhotoName(file.name);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhoto(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setImageFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      setPhoto(previewUrl);
     }
   };
 
   const handleRemovePhoto = () => {
     setPhoto(null);
     setPhotoName("");
+    setImageFile(null);
   };
 
   const handleNext = () => {
@@ -98,41 +109,58 @@ export default function ReportPage() {
     if (!category || !address || !title || !description) return;
 
     setIsSubmitting(true);
-    setPipelineStep(0);
+    setError(null);
+    setIsUploading(true);
 
-    // Simulate AI pipeline progression
-    const intervals = [1200, 1500, 1500, 1200];
-    for (let i = 0; i < intervals.length; i++) {
-      await new Promise((resolve) => setTimeout(resolve, intervals[i]));
-      setPipelineStep((prev) => prev + 1);
+    let imageUrl = photo;
+
+    // 1. Upload image if it is a local file object
+    if (imageFile) {
+      try {
+        const uploadRes = await uploadImage(imageFile);
+        imageUrl = uploadRes.url;
+      } catch (err) {
+        console.error("Upload failed:", err);
+        showToast("Upload failed, try again", "error");
+        setIsSubmitting(false);
+        setIsUploading(false);
+        return;
+      }
     }
 
-    const randomIdNum = Math.floor(100 + Math.random() * 900);
-    const newId = `JGK-2026-${randomIdNum}`;
-    
-    const customComplaint = {
-      id: newId,
-      title,
-      description,
-      category,
-      status: "submitted",
-      location: { address, city, lat: 12.9716, lng: 77.5946 },
-      imageUrl: photo || "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=400&h=300&fit=crop",
-      upvotes: 1,
-      reportedBy: { name: "You (Citizen)", avatar: "U" },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      timeline: [
-        { id: "t1", stage: "Image Validated", status: "completed", description: "AI confirmed: issue detected with high confidence", timestamp: new Date().toISOString(), agent: "Vision Agent" },
-        { id: "t2", stage: "Issue Classified", status: "completed", description: `Category: ${category} — Priority: High`, timestamp: new Date().toISOString(), agent: "Classification Agent" },
-        { id: "t3", stage: "Authority Routed", status: "active", description: "Routing to the designated Ward Officer", timestamp: new Date().toISOString(), agent: "Routing Agent" },
-        { id: "t4", stage: "Complaint Generated", status: "pending", description: "Pending routing", timestamp: "", agent: "Complaint Agent" },
-        { id: "t5", stage: "Resolution Tracking", status: "pending", description: "Pending complaint filing", timestamp: "", agent: "Tracking Agent" },
-      ],
-    };
-    
-    sessionStorage.setItem(newId, JSON.stringify(customComplaint));
-    router.push(`/report/${newId}`);
+    setIsUploading(false);
+
+    // 2. Create the civic issue in database
+    try {
+      if (!imageUrl) {
+        showToast("Please provide a photograph", "error");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const latVal = 12.9716 + (pinCoords.y - 50) / 1000;
+      const lngVal = 77.5946 + (pinCoords.x - 50) / 1000;
+
+      const issuePayload = {
+        image_url: imageUrl,
+        description: `${title}\n\n${description}`,
+        address,
+        lat: latVal,
+        lng: lngVal,
+        citizen_id: "anonymous"
+      };
+
+      const newIssue = await createIssue(issuePayload);
+      if (newIssue && newIssue.id) {
+        router.push(`/report/${newIssue.id}`);
+      } else {
+        throw new Error("Empty issue ID response");
+      }
+    } catch (err) {
+      console.error("Issue creation failed:", err);
+      showToast("Submission failed, try again", "error");
+      setIsSubmitting(false);
+    }
   };
 
   const isStepValid = () => {
@@ -447,126 +475,67 @@ export default function ReportPage() {
             </div>
           </motion.div>
         ) : (
-          /* Live AI Pipeline Simulation */
+          /* Submitting / Uploading Loading Screen */
           <motion.div
             key="submitting"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
             transition={transitionVars}
             className="bg-surface border border-border rounded-lg p-8 shadow-md text-center max-w-[500px] mx-auto space-y-8"
             style={{ willChange: "transform, opacity" }}
           >
             <div>
-              <h2 className="text-xl font-bold mb-2 text-foreground tracking-tight">Deploying AI Pipeline</h2>
+              <h2 className="text-xl font-bold mb-2 text-foreground tracking-tight">
+                {isUploading ? "Uploading Image" : "Submitting Report"}
+              </h2>
               <p className="text-sm text-muted">
-                Executing multi-agent verification and civic routing...
+                {isUploading 
+                  ? "Storing your evidence image securely..." 
+                  : "Registering issue and launching AI verification pipeline..."}
               </p>
             </div>
 
             {/* Animation Core */}
             <div className="flex justify-center py-6 select-none pointer-events-none">
               <div className="relative flex items-center justify-center">
-                <Loader2 className="w-24 h-24 text-primary animate-spin" style={{ strokeWidth: 1 }} />
+                <Loader2 className="w-24 h-24 text-primary animate-spin" style={{ strokeWidth: 1.5 }} />
                 <div className="absolute text-2xl animate-pulse">🤖</div>
               </div>
             </div>
 
-            {/* Timeline Steps */}
-            <div className="space-y-4 text-left max-w-sm mx-auto border-t border-border/50 pt-6">
-              {/* Agent Step 1 */}
-              <div className="flex items-start gap-3">
-                <div className="mt-1 flex-shrink-0">
-                  {pipelineStep > 0 ? (
-                    <div className="w-5 h-5 rounded-full bg-success text-white flex items-center justify-center text-xs font-bold select-none pointer-events-none">
-                      ✓
-                    </div>
-                  ) : (
-                    <Eye className="w-5 h-5 text-primary animate-pulse" />
-                  )}
-                </div>
-                <div>
-                  <div className="font-semibold text-sm text-foreground">Vision Agent Validation</div>
-                  <div className="text-xs text-muted">
-                    {pipelineStep > 0 ? "Validated: Street damage confirmed" : "Scanning photo for civic anomalies..."}
-                  </div>
-                </div>
-              </div>
-
-              {/* Agent Step 2 */}
-              <div className="flex items-start gap-3">
-                <div className="mt-1 flex-shrink-0">
-                  {pipelineStep > 1 ? (
-                    <div className="w-5 h-5 rounded-full bg-success text-white flex items-center justify-center text-xs font-bold select-none pointer-events-none">
-                      ✓
-                    </div>
-                  ) : pipelineStep === 1 ? (
-                    <Zap className="w-5 h-5 text-primary animate-pulse" />
-                  ) : (
-                    <div className="w-5 h-5 rounded-full border border-border" />
-                  )}
-                </div>
-                <div>
-                  <div className="font-semibold text-sm text-foreground">Classification & Severity Assessment</div>
-                  <div className="text-xs text-muted">
-                    {pipelineStep > 1
-                      ? `Classified: ${category ? category.toUpperCase() : "GENERAL"} - Severity Assigned`
-                      : pipelineStep === 1
-                      ? "Analyzing metadata and evaluating safety priority..."
-                      : "Pending queue..."}
-                  </div>
-                </div>
-              </div>
-
-              {/* Agent Step 3 */}
-              <div className="flex items-start gap-3">
-                <div className="mt-1 flex-shrink-0">
-                  {pipelineStep > 2 ? (
-                    <div className="w-5 h-5 rounded-full bg-success text-white flex items-center justify-center text-xs font-bold select-none pointer-events-none">
-                      ✓
-                    </div>
-                  ) : pipelineStep === 2 ? (
-                    <Building2 className="w-5 h-5 text-primary animate-pulse" />
-                  ) : (
-                    <div className="w-5 h-5 rounded-full border border-border" />
-                  )}
-                </div>
-                <div>
-                  <div className="font-semibold text-sm text-foreground">Geographical Authority Routing</div>
-                  <div className="text-xs text-muted">
-                    {pipelineStep > 2
-                      ? `Target: Ward Division, ${city}`
-                      : pipelineStep === 2
-                      ? "Resolving municipal boundaries for ward routing..."
-                      : "Pending queue..."}
-                  </div>
-                </div>
-              </div>
-
-              {/* Agent Step 4 */}
-              <div className="flex items-start gap-3">
-                <div className="mt-1 flex-shrink-0">
-                  {pipelineStep > 3 ? (
-                    <div className="w-5 h-5 rounded-full bg-success text-white flex items-center justify-center text-xs font-bold select-none pointer-events-none">
-                      ✓
-                    </div>
-                  ) : pipelineStep === 3 ? (
-                    <Clock className="w-5 h-5 text-primary animate-pulse" />
-                  ) : (
-                    <div className="w-5 h-5 rounded-full border border-border" />
-                  )}
-                </div>
-                <div>
-                  <div className="font-semibold text-sm text-foreground">Official Grievance Registration</div>
-                  <div className="text-xs text-muted">
-                    {pipelineStep > 3
-                      ? "Complaint registered. Redirecting..."
-                      : pipelineStep === 3
-                      ? "Drafting official letter and submitting to portal..."
-                      : "Pending queue..."}
-                  </div>
-                </div>
-              </div>
+            <div className="text-xs text-muted font-mono bg-background/50 border border-border p-3 rounded-sm">
+              Status: {isUploading ? "UPLOADING_IMAGE" : "CREATING_DB_RECORD"}
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-md shadow-lg border ${
+              toastType === "success" 
+                ? "bg-success/15 border-success text-success" 
+                : "bg-error/15 border-error text-error"
+            }`}
+          >
+            {toastType === "success" ? (
+              <Check className="w-5 h-5 text-success" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-error" />
+            )}
+            <span className="text-sm font-medium">{toastMessage}</span>
+            <button
+              onClick={() => setToastMessage(null)}
+              className="ml-2 text-muted hover:text-foreground text-lg focus:outline-none"
+              aria-label="Dismiss toast"
+            >
+              ×
+            </button>
           </motion.div>
         )}
       </AnimatePresence>

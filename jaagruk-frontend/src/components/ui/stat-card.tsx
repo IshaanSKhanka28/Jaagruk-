@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, animate, useInView } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { type LucideIcon } from "lucide-react";
 
 interface StatCardProps {
@@ -40,24 +40,35 @@ function AnimatedNumber({ value, suffix = "" }: { value: number; suffix?: string
 }
 
 function CountUp({ target }: { target: number }) {
+  const [count, setCount] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true });
+  const hasStartedRef = useRef(false);
 
   useEffect(() => {
-    if (isInView && ref.current) {
-      const node = ref.current;
-      const controls = animate(0, target, {
-        duration: 1.2,
-        ease: [0.16, 1, 0.3, 1],
-        onUpdate(value) {
-          node.textContent = Math.round(value).toLocaleString("en-IN");
-        },
-      });
-      return () => controls.stop();
+    if (isInView && !hasStartedRef.current) {
+      hasStartedRef.current = true;
+      const duration = 1500; // 1.5 seconds
+      const intervalTime = 30; // 30ms step
+      const totalSteps = duration / intervalTime;
+      const stepIncrement = target / totalSteps;
+      
+      let currentStep = 0;
+      const timer = setInterval(() => {
+        currentStep++;
+        if (currentStep >= totalSteps) {
+          setCount(target);
+          clearInterval(timer);
+        } else {
+          setCount(Math.round(currentStep * stepIncrement));
+        }
+      }, intervalTime);
+
+      return () => clearInterval(timer);
     }
   }, [isInView, target]);
 
-  return <span ref={ref}>0</span>;
+  return <span ref={ref}>{isInView ? count.toLocaleString("en-IN") : "0"}</span>;
 }
 
 export function StatCard({ icon: Icon, value, label, suffix = "", color }: StatCardProps) {

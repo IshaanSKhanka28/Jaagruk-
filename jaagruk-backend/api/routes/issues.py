@@ -1,3 +1,4 @@
+import io
 import json
 import logging
 from uuid import UUID
@@ -5,7 +6,8 @@ from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.responses import StreamingResponse
-from config.database import get_db, pool
+from config.database import get_db
+import config.database as db_config
 from models.issue import IssueCreate, IssueResponse, IssueUpdate
 from utils.helpers import generate_pdf_report, get_image_bytes
 from agents.validator import run_validator
@@ -14,6 +16,7 @@ from agents.router import run_router
 from agents.reporter import run_reporter
 
 router = APIRouter(prefix="/api/issues", tags=["issues"])
+dashboard_router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 def record_to_dict(record) -> Optional[dict]:
     """Helper to convert asyncpg Record to dict and parse JSONB field."""
@@ -51,7 +54,7 @@ async def process_issue_pipeline(issue_id: str, image_url: str, raw_description:
         if not val_result.get("valid", True):
             # Issue is rejected
             logging.info(f"Issue {issue_id} rejected by Validator Agent: {val_result.get('reason')}")
-            async with pool.acquire() as conn:
+            async with db_config.pool.acquire() as conn:
                 await conn.execute(
                     """
                     UPDATE issues
@@ -110,7 +113,7 @@ async def process_issue_pipeline(issue_id: str, image_url: str, raw_description:
         })
         
         # Save pipeline outputs and update status/description
-        async with pool.acquire() as conn:
+        async with db_config.pool.acquire() as conn:
             await conn.execute(
                 """
                 UPDATE issues
@@ -135,7 +138,7 @@ async def process_issue_pipeline(issue_id: str, image_url: str, raw_description:
             "output": {"error": str(e)},
             "timestamp": datetime.utcnow().isoformat()
         })
-        async with pool.acquire() as conn:
+        async with db_config.pool.acquire() as conn:
             await conn.execute(
                 """
                 UPDATE issues
@@ -374,4 +377,123 @@ async def download_issue_pdf(id: UUID, db=Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to compile PDF report: {str(e)}"
+        )
+
+@dashboard_router.get("/stats")
+async def get_dashboard_stats(db=Depends(get_db)):
+    try:
+        # 1. Total and status counts
+        status_query = """
+            SELECT status, COUNT(*) as count
+            FROM issues
+            GROUP BY status;
+        """
+        status_records = await db.fetch(status_query)
+        
+        total_issues = 0
+        resolved = 0
+        open_count = 0
+        in_progress = 0
+        
+        by_status = {
+            "OPEN": 0,
+            "IN_PROGRESS": 0,
+            "RESOLVED": 0
+        }
+        
+        for r in status_records:
+            status_name = (r["status"] or "").upper()
+            count_val = r["count"]
+            total_issues += count_val
+            
+            if status_name == "RESOLVED":
+                resolved = count_val
+                by_status["RESOLVED"] = count_val
+            elif status_name == "OPEN" or status_name == "SUBMITTED":
+                open_count += count_val
+                by_status["OPEN"] += count_val
+            elif status_name == "IN_PROGRESS" or status_name == "IN-PROGRESS":
+                in_progress += count_val
+                by_status["IN_PROGRESS"] += count_val
+                
+        # 2. Avg resolution days
+        avg_query = """
+            SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 86400.0), 0.0) as avg_days
+            FROM issues
+            WHERE status = 'RESOLVED' AND resolved_at IS NOT NULL;
+        """
+        avg_record = await db.fetchrow(avg_query)
+        avg_resolution_days = avg_record["avg_days"] if avg_record else 0.0
+        
+        # 3. Category distribution
+        cat_query = """
+            SELECT category, COUNT(*) as count
+            FROM issues
+            GROUP BY category;
+        """
+        cat_records = await db.fetch(cat_query)
+        
+        by_category = {
+            "POTHOLE": 0,
+            "WATER_LEAKAGE": 0,
+            "BROKEN_LIGHT": 0,
+            "GARBAGE": 0,
+            "DAMAGED_ROAD": 0,
+            "OTHER": 0
+        }
+        
+        for r in cat_records:
+            cat_name = (r["category"] or "").upper()
+            if cat_name in ["ROADS", "POTHOLE"]:
+                by_category["POTHOLE"] += r["count"]
+            elif cat_name == "DAMAGED_ROAD" or cat_name == "DAMAGED-ROAD":
+                by_category["DAMAGED_ROAD"] += r["count"]
+            elif cat_name in ["WATER", "WATER_LEAKAGE", "WATER-LEAKAGE"]:
+                by_category["WATER_LEAKAGE"] += r["count"]
+            elif cat_name in ["LIGHT", "BROKEN_LIGHT", "STREETLIGHT", "BROKEN-LIGHT"]:
+                by_category["BROKEN_LIGHT"] += r["count"]
+            elif cat_name in ["GARBAGE", "SANITATION"]:
+                by_category["GARBAGE"] += r["count"]
+            else:
+                by_category["OTHER"] += r["count"]
+                
+        # 4. Weekly trend
+        from datetime import timedelta
+        weekly_trend = []
+        today = datetime.utcnow().date()
+        for i in range(6, -1, -1):
+            day = today - timedelta(days=i)
+            weekly_trend.append({"date": day.isoformat(), "count": 0})
+            
+        trend_query = """
+            SELECT DATE(created_at) as date_val, COUNT(*) as count
+            FROM issues
+            WHERE created_at >= CURRENT_DATE - INTERVAL '6 days'
+            GROUP BY DATE(created_at)
+            ORDER BY DATE(created_at);
+        """
+        trend_records = await db.fetch(trend_query)
+        for r in trend_records:
+            r_date = r["date_val"]
+            if r_date:
+                r_date_str = r_date.isoformat()
+                for item in weekly_trend:
+                    if item["date"] == r_date_str:
+                        item["count"] = r["count"]
+                        
+        return {
+            "total_issues": total_issues,
+            "resolved": resolved,
+            "open": open_count,
+            "in_progress": in_progress,
+            "avg_resolution_days": avg_resolution_days,
+            "by_category": by_category,
+            "by_status": by_status,
+            "weekly_trend": weekly_trend
+        }
+    except Exception as e:
+        logging.error(f"Failed to calculate dashboard statistics: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to calculate stats: {str(e)}"
         )

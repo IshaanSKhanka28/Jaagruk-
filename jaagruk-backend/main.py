@@ -1,10 +1,19 @@
 import os
+import sys
 import uvicorn
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+
+# Reconfigure stdout/stderr to use UTF-8 to prevent UnicodeEncodeError in Windows CP1252 consoles
+if sys.platform.startswith("win"):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
 
 # Load env variables
 load_dotenv()
@@ -20,7 +29,7 @@ logging.basicConfig(
 
 from config.database import init_db, close_db
 from api.routes.upload import router as upload_router
-from api.routes.issues import router as issues_router
+from api.routes.issues import router as issues_router, dashboard_router
 from api.routes.agents import router as agents_router
 
 @asynccontextmanager
@@ -56,6 +65,7 @@ app.add_middleware(
 # Register routers
 app.include_router(upload_router)
 app.include_router(issues_router)
+app.include_router(dashboard_router)
 app.include_router(agents_router)
 
 @app.get("/")

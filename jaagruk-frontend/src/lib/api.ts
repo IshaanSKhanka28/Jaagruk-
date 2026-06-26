@@ -52,9 +52,9 @@ export async function getIssues(filters?: {
   return res.json()
 }
 
-export async function upvoteIssue(id: string) {
+export async function upvoteIssue(id: string, citizenId: string = "anonymous") {
   const res = await fetch(
-    `${API_URL}/api/issues/${id}/upvote`,
+    `${API_URL}/api/issues/${id}/upvote?citizen_id=${citizenId}`,
     { method: "POST" }
   )
   if (!res.ok) throw new Error("Upvote failed")

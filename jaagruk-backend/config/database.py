@@ -20,7 +20,7 @@ async def init_db():
     try:
         if not pool:
             # Supabase connection pools can benefit from connection parameters
-            pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10)
+            pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10, statement_cache_size=0)
         
         async with pool.acquire() as conn:
             # Enable pgcrypto extension for gen_random_uuid()
@@ -59,7 +59,7 @@ async def get_db():
     """Dependency generator that yields a database connection from the pool."""
     global pool
     if not pool:
-        pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10)
+        pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10, statement_cache_size=0)
     
     async with pool.acquire() as conn:
         yield conn
