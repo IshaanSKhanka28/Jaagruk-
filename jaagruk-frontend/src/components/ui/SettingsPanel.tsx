@@ -17,8 +17,19 @@ import {
   User,
   Bell,
   ChevronRight,
+  Palette,
 } from "lucide-react";
-import { SupportedLanguage } from "@/lib/translations";
+import { Language } from "@/lib/translations";
+import { useLanguage } from "@/hooks/useLanguage";
+
+const ACCENTS = [
+  { key: "orange", hex: "#F97316" },
+  { key: "blue", hex: "#3B82F6" },
+  { key: "green", hex: "#22C55E" },
+  { key: "purple", hex: "#7C3AED" },
+  { key: "red", hex: "#EF4444" },
+  { key: "pink", hex: "#EC4899" },
+];
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -73,6 +84,7 @@ function Toggle({
 export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -80,7 +92,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   const [fontSize, setFontSize] = useState("medium");
   const [reducedMotion, setReducedMotion] = useState(false);
   const [highContrast, setHighContrast] = useState(false);
-  const [language, setLanguage] = useState<SupportedLanguage>("en");
+  const [accent, setAccent] = useState("orange");
   const [colorblind, setColorblind] = useState("none");
   const [screenReader, setScreenReader] = useState(false);
   const [notifyPush, setNotifyPush] = useState(false);
@@ -93,7 +105,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
     setFontSize(localStorage.getItem("jaagruk_fontsize") || "medium");
     setReducedMotion(localStorage.getItem("jaagruk_reduced_motion") === "true");
     setHighContrast(localStorage.getItem("jaagruk_high_contrast") === "true");
-    setLanguage((localStorage.getItem("jaagruk_language") as SupportedLanguage) || "en");
+    setAccent(localStorage.getItem("jaagruk_accent") || "orange");
     setColorblind(localStorage.getItem("jaagruk_colorblind") || "none");
     setScreenReader(localStorage.getItem("jaagruk_screenreader") === "true");
     setNotifyPush(localStorage.getItem("jaagruk_notify_push") === "true");
@@ -132,6 +144,11 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   const updateSetting = (key: string, value: string | boolean) => {
     localStorage.setItem(key, String(value));
     window.dispatchEvent(new Event("jaagruk_settings_changed"));
+  };
+
+  const applyAccent = (color: string) => {
+    setAccent(color);
+    updateSetting("jaagruk_accent", color);
   };
 
   if (!mounted) return null;
@@ -175,7 +192,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
               <div className="flex items-center justify-between border-b border-border/60 pb-4">
                 <div className="flex items-center gap-2">
                   <Settings className="w-5 h-5 text-primary" />
-                  <h2 className="text-lg font-bold">Preferences</h2>
+                  <h2 className="text-lg font-bold">{t("settings")}</h2>
                 </div>
                 <button
                   onClick={onClose}
@@ -198,7 +215,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                   <User className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-bold text-foreground">Your Profile</div>
+                  <div className="text-sm font-bold text-foreground">{t("profile")}</div>
                   <div className="text-[11px] text-muted">Reports, badges & impact</div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted shrink-0" />
@@ -207,7 +224,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
               {/* SECTION 2: APPEARANCE */}
               <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
-                  <Monitor className="w-3.5 h-3.5" /> Appearance
+                  <Monitor className="w-3.5 h-3.5" /> {t("appearance")}
                 </h3>
 
                 <div className="space-y-2">
@@ -268,10 +285,33 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 </div>
               </div>
 
+              {/* ACCENT COLOR */}
+              <div className="space-y-3 pt-2 border-t border-border/40">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                  <Palette className="w-3.5 h-3.5" /> Accent Color
+                </h3>
+                <div className="flex gap-2.5 flex-wrap">
+                  {ACCENTS.map((a) => (
+                    <button
+                      key={a.key}
+                      onClick={() => applyAccent(a.key)}
+                      aria-label={`Accent color ${a.key}`}
+                      aria-pressed={accent === a.key}
+                      className={`w-8 h-8 rounded-full transition-transform hover:scale-110 focus:outline-none ${
+                        accent === a.key
+                          ? "ring-2 ring-offset-2 ring-offset-background ring-foreground"
+                          : ""
+                      }`}
+                      style={{ backgroundColor: a.hex }}
+                    />
+                  ))}
+                </div>
+              </div>
+
               {/* SECTION 3: NOTIFICATIONS */}
               <div className="space-y-2 pt-2 border-t border-border/40">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
-                  <Bell className="w-3.5 h-3.5" /> Notifications
+                  <Bell className="w-3.5 h-3.5" /> {t("notifications")}
                 </h3>
                 <Toggle
                   id="notify-push-toggle"
@@ -308,7 +348,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
               {/* SECTION 4: LANGUAGE */}
               <div className="space-y-4 pt-2 border-t border-border/40">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
-                  <Globe className="w-3.5 h-3.5" /> Language
+                  <Globe className="w-3.5 h-3.5" /> {t("language")}
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
                   {LANGUAGES.map((lang) => {
@@ -316,10 +356,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                     return (
                       <button
                         key={lang.code}
-                        onClick={() => {
-                          setLanguage(lang.code as SupportedLanguage);
-                          updateSetting("jaagruk_language", lang.code);
-                        }}
+                        onClick={() => setLanguage(lang.code as Language)}
                         className={`flex items-center gap-2 p-2.5 text-xs font-semibold rounded-sm border transition-all ${
                           isActive
                             ? "border-[#1D4ED8] bg-[#1D4ED8]/10 text-primary font-bold shadow-sm"
@@ -337,7 +374,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
               {/* SECTION 5: ACCESSIBILITY */}
               <div className="space-y-2 pt-2 border-t border-border/40">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
-                  <Accessibility className="w-3.5 h-3.5" /> Accessibility
+                  <Accessibility className="w-3.5 h-3.5" /> {t("accessibility")}
                 </h3>
 
                 <Toggle

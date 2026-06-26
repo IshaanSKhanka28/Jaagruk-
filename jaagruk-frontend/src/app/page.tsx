@@ -22,6 +22,7 @@ import {
 import { MOCK_COMPLAINTS, MOCK_DASHBOARD_STATS } from "@/lib/mock-data";
 import { ComplaintCard } from "@/components/ui/complaint-card";
 import { StatCard } from "@/components/ui/stat-card";
+import { useLanguage } from "@/hooks/useLanguage";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -113,6 +114,7 @@ const AGENT_PIPELINE = [
 
 export default function Home() {
   const { resolvedTheme } = useTheme();
+  const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -274,7 +276,7 @@ export default function Home() {
 
             {/* Tagline Badge */}
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase bg-accent/10 text-accent border border-accent/20 mb-6">
-              <Shield className="w-3.5 h-3.5" /> See It. Report It. Fix It.
+              <Shield className="w-3.5 h-3.5" /> {t("tagline")}
             </span>
 
             {/* Title */}
@@ -323,14 +325,14 @@ export default function Home() {
                   href="/report"
                   className="relative w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-md font-semibold bg-accent text-accent-foreground hover:bg-accent-hover hover:scale-[1.02] shadow-md hover:shadow-lg transition-all duration-fast z-10"
                 >
-                  <Camera className="w-5 h-5" /> Report an Issue
+                  <Camera className="w-5 h-5" /> {t("reportIssue")}
                 </Link>
               </div>
               <Link
                 href="/map"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-md font-semibold bg-surface border border-border hover:bg-border/30 hover:border-border-hover transition-all duration-fast text-foreground"
               >
-                View Live Map <ArrowRight className="w-4 h-4" />
+                {t("viewMap")} <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
 

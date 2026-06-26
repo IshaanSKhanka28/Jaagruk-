@@ -29,13 +29,38 @@ export function ClientLoadingWrapper({ children }: { children: React.ReactNode }
       document.documentElement.style.filter = `url(#${colorblindVal})`;
     }
 
-    // 4. Reduced Motion State Toggle
+    // 4. Reduced Motion State Toggle (kills framer-motion via MotionConfig
+    //    AND CSS transitions/animations via the .reduce-motion class)
     const isReduced = localStorage.getItem("jaagruk_reduced_motion") === "true";
     setReducedMotion(isReduced);
+    document.documentElement.classList.toggle("reduce-motion", isReduced);
 
     // 5. Screen Reader Attribute
     const isScreenReader = localStorage.getItem("jaagruk_screenreader") === "true";
     document.documentElement.setAttribute("data-screenreader", String(isScreenReader));
+
+    // 6. Accent Color
+    const ACCENTS: Record<string, string> = {
+      orange: "#F97316",
+      blue: "#3B82F6",
+      green: "#22C55E",
+      purple: "#7C3AED",
+      red: "#EF4444",
+      pink: "#EC4899",
+    };
+    const accent = localStorage.getItem("jaagruk_accent");
+    if (accent && ACCENTS[accent]) {
+      document.documentElement.style.setProperty("--color-accent", ACCENTS[accent]);
+      document.documentElement.style.setProperty("--color-accent-hover", ACCENTS[accent]);
+    } else {
+      // Restore theme default
+      document.documentElement.style.removeProperty("--color-accent");
+      document.documentElement.style.removeProperty("--color-accent-hover");
+    }
+
+    // 7. Language attribute
+    const lang = localStorage.getItem("jaagruk_language");
+    if (lang) document.documentElement.lang = lang;
   }, []);
 
   useEffect(() => {

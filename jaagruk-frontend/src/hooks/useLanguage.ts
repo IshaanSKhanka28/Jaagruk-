@@ -1,33 +1,42 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { TRANSLATIONS, SupportedLanguage, Translations } from "@/lib/translations";
+import { translations, Language, TranslationKey } from "@/lib/translations";
 
 export function useLanguage() {
-  const [lang, setLang] = useState<SupportedLanguage>("en");
+  const [language, setLanguageState] = useState<Language>("en");
 
-  const updateLanguage = useCallback(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("jaagruk_language") as SupportedLanguage;
-      if (stored && TRANSLATIONS[stored]) {
-        setLang(stored);
-      }
+  const sync = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const saved = localStorage.getItem("jaagruk_language") as Language | null;
+    if (saved && translations[saved]) {
+      setLanguageState(saved);
+      document.documentElement.lang = saved;
     }
   }, []);
 
   useEffect(() => {
-    updateLanguage();
-    window.addEventListener("jaagruk_settings_changed", updateLanguage);
-    return () => window.removeEventListener("jaagruk_settings_changed", updateLanguage);
-  }, [updateLanguage]);
+    sync();
+    // Keep every component using this hook in sync when the language changes
+    window.addEventListener("jaagruk_settings_changed", sync);
+    return () => window.removeEventListener("jaagruk_settings_changed", sync);
+  }, [sync]);
+
+  const setLanguage = useCallback((lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem("jaagruk_language", lang);
+    document.documentElement.lang = lang;
+    // Notify other hook instances (navbar, home, panel, ...)
+    window.dispatchEvent(new Event("jaagruk_settings_changed"));
+  }, []);
 
   const t = useCallback(
-    (key: keyof Translations): string => {
-      const dict = TRANSLATIONS[lang] || TRANSLATIONS.en;
-      return dict[key] || TRANSLATIONS.en[key] || key;
+    (key: TranslationKey): string => {
+      const dict = translations[language] || translations.en;
+      return dict[key] || translations.en[key] || key;
     },
-    [lang]
+    [language]
   );
 
-  return { t, language: lang };
+  return { language, setLanguage, t };
 }

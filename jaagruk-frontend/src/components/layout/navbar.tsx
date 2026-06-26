@@ -8,16 +8,19 @@ import { Menu, X, Settings } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SettingsPanel } from "@/components/ui/SettingsPanel";
+import { useLanguage } from "@/hooks/useLanguage";
+import { TranslationKey } from "@/lib/translations";
 
-const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/map", label: "Map" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/leaderboard", label: "Leaderboard" },
+const NAV_LINKS: { href: string; key: TranslationKey }[] = [
+  { href: "/", key: "home" },
+  { href: "/map", key: "map" },
+  { href: "/dashboard", key: "dashboard" },
+  { href: "/leaderboard", key: "leaderboard" },
 ];
 
 export function Navbar() {
   const pathname = usePathname();
+  const { t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -48,7 +51,7 @@ export function Navbar() {
                 }`}
                 style={{ transitionDuration: "var(--duration-fast)" }}
               >
-                <span className="relative z-10">{link.label}</span>
+                <span className="relative z-10">{t(link.key)}</span>
                 {isActive && (
                   <motion.span
                     layoutId="active-nav-pill"
@@ -80,7 +83,7 @@ export function Navbar() {
             style={{ transitionDuration: "var(--duration-fast)" }}
             id="report-cta"
           >
-            Report Issue
+            {t("reportIssue")}
           </Link>
 
           {/* Mobile menu button */}
@@ -119,7 +122,7 @@ export function Navbar() {
                         : "text-muted hover:text-foreground hover:bg-surface"
                     }`}
                   >
-                    {link.label}
+                    {t(link.key)}
                   </Link>
                 );
               })}
@@ -128,7 +131,7 @@ export function Navbar() {
                 onClick={() => setMobileOpen(false)}
                 className="mt-2 flex items-center justify-center px-4 py-2.5 text-sm font-medium rounded-[var(--radius-md)] bg-primary text-primary-foreground hover:bg-primary-hover transition-colors"
               >
-                Report Issue
+                {t("reportIssue")}
               </Link>
             </nav>
           </motion.div>
