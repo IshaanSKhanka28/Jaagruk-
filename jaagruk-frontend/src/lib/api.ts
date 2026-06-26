@@ -1,5 +1,7 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL 
-  || "http://localhost:8001"
+// Strip any trailing slash(es) so request paths like `${API_URL}/api/...`
+// never produce a double slash (e.g. ".../app//api/issues" -> 404).
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001")
+  .replace(/\/+$/, "")
 
 export async function uploadImage(file: File) {
   const formData = new FormData()
