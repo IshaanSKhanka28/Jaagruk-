@@ -158,7 +158,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9900]"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10050]"
           />
 
           {/* Panel */}
@@ -168,7 +168,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
             role="dialog"
             aria-modal="true"
             aria-label="Preferences"
-            className={`${panelClass} bg-background z-[9910] overflow-y-auto p-6 shadow-2xl flex flex-col justify-between gap-6`}
+            className={`${panelClass} bg-background z-[10060] overflow-y-auto p-6 shadow-2xl flex flex-col justify-between gap-6`}
           >
             <div className="space-y-6">
               {/* Header */}
