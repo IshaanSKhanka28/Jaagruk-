@@ -10,10 +10,17 @@ from config.database import get_db
 import config.database as db_config
 from models.issue import IssueCreate, IssueResponse, IssueUpdate
 from utils.helpers import generate_pdf_report, get_image_bytes
-from agents.validator import run_validator
-from agents.classifier import run_classifier
-from agents.router import run_router
+from agents.classifier import run_analyzer, DEPARTMENT_MAP
 from agents.reporter import run_reporter
+
+
+def _derive_priority(severity: int, immediate_risk: bool) -> str:
+    """Deterministic priority from severity (replaces the router's Gemini call)."""
+    if immediate_risk or severity >= 4:
+        return "HIGH"
+    if severity == 3:
+        return "MEDIUM"
+    return "LOW"
 
 router = APIRouter(prefix="/api/issues", tags=["issues"])
 dashboard_router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
@@ -33,27 +40,39 @@ def record_to_dict(record) -> Optional[dict]:
     return d
 
 async def process_issue_pipeline(issue_id: str, image_url: str, raw_description: str, address: str):
-    """Background worker executing the collaborative multi-agent pipeline."""
+    """Background worker executing the multi-agent pipeline.
+
+    To stay within Gemini free-tier quota this makes only ONE Gemini call
+    (combined validate + classify). Routing and the grievance-draft marker are
+    derived deterministically; the full complaint letter is generated lazily
+    when a PDF is requested. The agent_log still records all four agent steps so
+    the frontend timeline is unchanged.
+    """
     logging.info(f"Starting background AI pipeline for issue {issue_id}")
     agent_log = []
-    
+
     try:
         # 1. Download image bytes
         image_bytes = await get_image_bytes(image_url)
-        
-        # 2. Run Validator Agent
-        val_start = datetime.utcnow()
-        val_result = await run_validator(image_bytes, raw_description)
+
+        # 2. Single AI call: validation + classification
+        start = datetime.utcnow()
+        result = await run_analyzer(image_bytes, raw_description)
+
         agent_log.append({
             "agent": "Validator Agent",
-            "action": "Validated image and description",
-            "output": val_result,
-            "timestamp": val_start.isoformat()
+            "action": "Validated image authenticity",
+            "output": {
+                "valid": result.get("valid", True),
+                "reason": result.get("reason", ""),
+                "confidence": result.get("confidence", 0.0),
+                "detected_elements": result.get("detected_elements", []),
+            },
+            "timestamp": start.isoformat(),
         })
-        
-        if not val_result.get("valid", True):
-            # Issue is rejected
-            logging.info(f"Issue {issue_id} rejected by Validator Agent: {val_result.get('reason')}")
+
+        if not result.get("valid", True):
+            logging.info(f"Issue {issue_id} rejected: {result.get('reason')}")
             async with db_config.pool.acquire() as conn:
                 await conn.execute(
                     """
@@ -65,67 +84,67 @@ async def process_issue_pipeline(issue_id: str, image_url: str, raw_description:
                     UUID(issue_id)
                 )
             return
-        
-        # 3. Run Classifier Agent
-        class_start = datetime.utcnow()
-        class_result = await run_classifier(image_bytes, raw_description)
+
+        category = result.get("category", "OTHER")
+        severity = int(result.get("severity", 3) or 3)
+        immediate_risk = bool(result.get("immediate_risk", False))
+        priority = _derive_priority(severity, immediate_risk)
+        department = DEPARTMENT_MAP.get(category, "General Municipal Office")
+
+        # Classifier step (from the same single call)
         agent_log.append({
             "agent": "Classifier Agent",
-            "action": "Classified category, severity index, and priority",
-            "output": class_result,
-            "timestamp": class_start.isoformat()
+            "action": "Classified category and severity",
+            "output": {
+                "category": category,
+                "severity": severity,
+                "description": result.get("description", ""),
+                "affected_area": result.get("affected_area", ""),
+                "immediate_risk": immediate_risk,
+                "priority": priority,
+            },
+            "timestamp": datetime.utcnow().isoformat(),
         })
-        
-        category = class_result.get("category", "OTHER")
-        severity = class_result.get("severity", 1)
-        priority = class_result.get("priority", "LOW")
-        refined_description = class_result.get("refined_description", raw_description)
-        
-        # 4. Run Routing Agent
-        route_start = datetime.utcnow()
-        route_result = await run_router(category, address)
+
+        # Routing step — deterministic (no Gemini call)
         agent_log.append({
             "agent": "Routing Agent",
-            "action": "Determined target department and officer role",
-            "output": route_result,
-            "timestamp": route_start.isoformat()
+            "action": "Routed to municipal department",
+            "output": {
+                "department": department,
+                "priority": priority,
+                "reasoning": f"Category '{category}' maps to {department}; priority {priority} from severity {severity}/5.",
+                "estimated_resolution_days": 3 if priority == "HIGH" else 7,
+                "escalation_required": priority == "HIGH",
+            },
+            "timestamp": datetime.utcnow().isoformat(),
         })
-        
-        department = route_result.get("department", "General Municipal Administration")
-        
-        # 5. Run Reporter Agent
-        report_start = datetime.utcnow()
-        report_data = {
-            "id": issue_id,
-            "category": category,
-            "address": address,
-            "severity": severity,
-            "priority": priority,
-            "refined_description": refined_description,
-            "department": department
-        }
-        report_result = await run_reporter(report_data)
+
+        # Reporter step — lightweight marker; full letter is generated on PDF download
         agent_log.append({
             "agent": "Reporter Agent",
-            "action": "Generated formal grievance letter text",
-            "output": report_result,
-            "timestamp": report_start.isoformat()
+            "action": "Prepared official grievance draft",
+            "output": {
+                "summary": f"Formal grievance prepared for {department}. Download the PDF for the full complaint letter.",
+                "urgency": "IMMEDIATE" if priority == "HIGH" else "URGENT" if priority == "MEDIUM" else "STANDARD",
+                "follow_up_days": 3 if priority == "HIGH" else 7,
+            },
+            "timestamp": datetime.utcnow().isoformat(),
         })
-        
-        # Save pipeline outputs and update status/description
+
+        # Persist classification outputs (citizen's original description is preserved as-is)
         async with db_config.pool.acquire() as conn:
             await conn.execute(
                 """
                 UPDATE issues
                 SET category = $1, severity = $2, priority = $3, department = $4,
-                    description = $5, agent_log = $6, updated_at = NOW()
-                WHERE id = $7
+                    agent_log = $5, updated_at = NOW()
+                WHERE id = $6
                 """,
                 category,
                 severity,
                 priority,
                 department,
-                refined_description,
                 json.dumps(agent_log),
                 UUID(issue_id)
             )
@@ -359,9 +378,18 @@ async def download_issue_pdf(id: UUID, db=Depends(get_db)):
             )
         
         issue_data = record_to_dict(record)
-        
+
+        # Lazily generate the formal complaint letter only when a PDF is requested.
+        # Kept off the submission hot path to conserve Gemini quota; failure is
+        # non-fatal — the PDF still renders from the structured fields.
+        letter_data = None
+        try:
+            letter_data = await run_reporter(issue_data)
+        except Exception as e:
+            logging.error(f"Lazy reporter generation failed; PDF without letter: {e}")
+
         # Generate the PDF file bytes
-        pdf_bytes = generate_pdf_report(issue_data)
+        pdf_bytes = generate_pdf_report(issue_data, letter_data)
         
         # Stream back as response
         filename = f"jaagruk_report_{str(id)[:8]}.pdf"

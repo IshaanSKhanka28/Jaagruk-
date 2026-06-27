@@ -46,8 +46,12 @@ async def get_image_bytes(url: str) -> bytes:
         logging.error(f"Error fetching image bytes: {e}")
         raise e
 
-def generate_pdf_report(issue_data: dict) -> bytes:
-    """Generates a structured PDF grievance report using ReportLab."""
+def generate_pdf_report(issue_data: dict, letter_data: dict = None) -> bytes:
+    """Generates a structured PDF grievance report using ReportLab.
+
+    If ``letter_data`` (from the Reporter agent) is supplied, the formal
+    complaint letter is embedded into the document.
+    """
     buffer = io.BytesIO()
     
     # Establish document layout
@@ -153,6 +157,21 @@ def generate_pdf_report(issue_data: dict) -> bytes:
         except Exception as e:
             logging.error(f"ReportLab failed to draw image: {e}")
             story.append(Paragraph(f"Attached Photographic Evidence: [Could not embed image: {e}]", label_style))
+
+    # Formal Complaint Letter (generated on-demand by the Reporter agent)
+    if letter_data:
+        story.append(Spacer(1, 6))
+        subject = letter_data.get("subject")
+        if subject:
+            story.append(Paragraph("Official Complaint Letter:", label_style))
+            story.append(Paragraph(f"Subject: {subject}", body_style))
+        letter_text = letter_data.get("letter")
+        if letter_text:
+            for para in str(letter_text).split("\n"):
+                para = para.strip()
+                if para:
+                    story.append(Paragraph(para, body_style))
+            story.append(Spacer(1, 15))
 
     # Footer Disclaimer
     story.append(Spacer(1, 10))
