@@ -7,7 +7,8 @@ from google import genai
 from google.genai import types
 
 client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
+    api_key=os.getenv("GEMINI_API_KEY"),
+    http_options={"api_version": "v1"}
 )
 
 PROMPT = """You are a civic issue validator for Jaagruk.
@@ -35,11 +36,11 @@ async def validate_issue(image_url: str, description: str = "") -> dict:
 
 async def run_validator(image_bytes: bytes, description: str = "") -> dict:
     try:
-        print(f"🔍 Running validator with gemini-2.5-flash-lite")
+        print(f"🔍 Running validator with gemini-1.5-flash")
         for attempt in range(3):
             try:
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash-lite",
+                    model="gemini-1.5-flash",
                     contents=[
                         types.Part.from_bytes(
                             data=image_bytes,
