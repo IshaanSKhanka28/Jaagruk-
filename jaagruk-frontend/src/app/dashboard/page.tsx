@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useAccessibility } from "@/hooks/useAccessibility";
+import { useLanguage } from "@/hooks/useLanguage";
 import {
   FileText,
   CheckCircle2,
@@ -56,6 +57,7 @@ function timeAgo(dateStr: string) {
 
 export default function DashboardPage() {
   const { screenReader } = useAccessibility();
+  const { t } = useLanguage();
   const [issues, setIssues] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
@@ -286,10 +288,10 @@ export default function DashboardPage() {
             className="text-3xl font-extrabold tracking-tight text-foreground"
             style={{ textWrap: "balance", lineHeight: "var(--leading-tight)" }}
           >
-            Civic Impact
+            {t("dashTitle")}
           </h1>
           <p className="text-muted leading-normal max-w-[65ch] text-sm">
-            Real-time metrics tracking municipal response efficiency and engagement.
+            {t("dashSubtitle")}
           </p>
         </div>
         <button
@@ -299,7 +301,7 @@ export default function DashboardPage() {
           aria-label={screenReader ? "Refresh dashboard analytics data" : "Refresh data"}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
-          <span>{isLoading ? "Refreshing..." : "Refresh Stats"}</span>
+          <span>{isLoading ? "Refreshing..." : t("refreshData")}</span>
         </button>
       </div>
 
@@ -354,7 +356,7 @@ export default function DashboardPage() {
               className="text-lg font-bold tracking-tight text-foreground"
               style={{ textWrap: "balance", lineHeight: "var(--leading-tight)" }}
             >
-              Weekly Trend
+              {t("weeklyTrend")}
             </h3>
             <p className="text-xs text-muted mt-1">Daily count of grievances submitted and resolved across the network over the last 7 days.</p>
           </div>
@@ -415,7 +417,7 @@ export default function DashboardPage() {
               className="text-lg font-bold tracking-tight text-foreground"
               style={{ textWrap: "balance", lineHeight: "var(--leading-tight)" }}
             >
-              Category Breakdown
+              {t("categoryBreakdown")}
             </h3>
             <p className="text-xs text-muted mt-1">Distribution of anomalies registered by department category.</p>
           </div>
@@ -486,7 +488,7 @@ export default function DashboardPage() {
               className="text-lg font-bold tracking-tight text-foreground"
               style={{ textWrap: "balance", lineHeight: "var(--leading-tight)" }}
             >
-              Lifecycle Breakdown
+              {t("lifecycleBreakdown")}
             </h3>
             <p className="text-xs text-muted mt-1">Status logs comparison inside the municipal workflow.</p>
           </div>
@@ -536,7 +538,7 @@ export default function DashboardPage() {
               className="text-lg font-bold tracking-tight text-foreground"
               style={{ textWrap: "balance", lineHeight: "var(--leading-tight)" }}
             >
-              Recent Civic Activity
+              {t("recentActivity")}
             </h3>
             <p className="text-xs text-muted mt-1">Real-time log of the latest complaints reported by citizens.</p>
           </div>
@@ -604,7 +606,7 @@ export default function DashboardPage() {
               className="text-lg font-bold tracking-tight text-foreground"
               style={{ textWrap: "balance", lineHeight: "var(--leading-tight)" }}
             >
-              Active Urban Centers
+              {t("activeUrbanCenters")}
             </h3>
             <p className="text-xs text-muted mt-1">Comparative log of issues resolved by municipality.</p>
           </div>
@@ -619,10 +621,10 @@ export default function DashboardPage() {
           <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="border-b border-border bg-background/80 text-muted font-semibold">
-                <th className="p-4">City</th>
-                <th className="p-4">Reported</th>
-                <th className="p-4">Resolved</th>
-                <th className="p-4 text-right">Resolution Rate</th>
+                <th className="p-4">{t("colCity")}</th>
+                <th className="p-4">{t("colReported")}</th>
+                <th className="p-4">{t("resolved")}</th>
+                <th className="p-4 text-right">{t("colResolutionRate")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60 bg-background/30">

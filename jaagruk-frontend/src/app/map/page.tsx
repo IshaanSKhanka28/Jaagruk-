@@ -5,6 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAccessibility } from "@/hooks/useAccessibility";
+import { useLanguage } from "@/hooks/useLanguage";
 import {
   Search,
   MapPin,
@@ -39,6 +40,7 @@ function mapBackendStatus(status: string): ComplaintStatus {
 
 export default function MapPage() {
   const { screenReader } = useAccessibility();
+  const { t } = useLanguage();
   const [selectedCity, setSelectedCity] = useState("Bangalore");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -165,7 +167,7 @@ export default function MapPage() {
       <div className="w-full lg:w-[400px] border-r border-border bg-surface flex flex-col h-full relative z-10">
         <div className="p-4 border-b border-border space-y-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold tracking-tight">Civic Radar</h1>
+            <h1 className="text-xl font-bold tracking-tight">{t("civicRadar")}</h1>
             
             {/* City Selector */}
             <select
@@ -276,7 +278,7 @@ export default function MapPage() {
 
               {/* Severity Level */}
               <div className="space-y-1.5 border-t border-border/40 pt-4">
-                <div className="text-[10px] uppercase font-bold text-muted">Severity Level</div>
+                <div className="text-[10px] uppercase font-bold text-muted">{t("severityLevel")}</div>
                 <div className="flex items-center gap-1.5">
                   {[1, 2, 3, 4, 5].map((dot) => (
                     <span
@@ -304,7 +306,7 @@ export default function MapPage() {
                   className="w-full h-12 flex items-center justify-center gap-2 rounded-md bg-primary hover:bg-primary/95 text-primary-foreground text-sm font-bold transition-all select-none cursor-pointer"
                   aria-label="Track agent pipeline details"
                 >
-                  <span>Track Agent Pipeline</span>
+                  <span>{t("trackAgentPipeline")}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -312,8 +314,8 @@ export default function MapPage() {
           ) : displayComplaints.length === 0 ? (
             <div className="p-8 text-center space-y-2">
               <AlertCircle className="w-8 h-8 text-muted mx-auto animate-pulse" />
-              <div className="text-sm font-semibold text-muted">No reports found</div>
-              <div className="text-xs text-muted/80">Try adjusting your filters or search terms.</div>
+              <div className="text-sm font-semibold text-muted">{t("noReportsFound")}</div>
+              <div className="text-xs text-muted/80">{t("adjustFilters")}</div>
             </div>
           ) : (
             displayComplaints.map((c) => {
@@ -360,7 +362,7 @@ export default function MapPage() {
         <div className="absolute top-4 left-4 z-20 flex gap-2">
           <div className="bg-surface/90 border border-border backdrop-blur-md px-3 h-12 rounded-md flex items-center gap-2 text-xs font-semibold shadow-sm select-none">
             <Compass className="w-3.5 h-3.5 text-primary animate-spin" style={{ animationDuration: "12s" }} />
-            <span>Civic-Scanner active</span>
+            <span>{t("scannerActive")}</span>
           </div>
         </div>
 

@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { User, ArrowLeft, FileText, Award, TrendingUp } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function ProfilePage() {
+  const { t } = useLanguage();
   return (
     <div className="mx-auto max-w-[640px] px-4 py-12">
       <Link
         href="/"
         className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-foreground transition-colors mb-6"
       >
-        <ArrowLeft className="w-4 h-4" /> Back
+        <ArrowLeft className="w-4 h-4" /> {t("backBtn")}
       </Link>
 
       <div className="bg-surface border border-border rounded-lg p-6 md:p-8 shadow-sm">
@@ -20,17 +22,17 @@ export default function ProfilePage() {
             <User className="w-8 h-8 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Anonymous Citizen</h1>
-            <p className="text-sm text-muted">Reporting civic issues across your city</p>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("profileName")}</h1>
+            <p className="text-sm text-muted">{t("profileSub")}</p>
           </div>
         </div>
 
         {/* Impact stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { icon: FileText, label: "Reports", value: "0" },
-            { icon: Award, label: "Badges", value: "0" },
-            { icon: TrendingUp, label: "Impact", value: "0" },
+            { icon: FileText, label: t("statReports"), value: "0" },
+            { icon: Award, label: t("statBadges"), value: "0" },
+            { icon: TrendingUp, label: t("statImpact"), value: "0" },
           ].map((stat) => {
             const Icon = stat.icon;
             return (

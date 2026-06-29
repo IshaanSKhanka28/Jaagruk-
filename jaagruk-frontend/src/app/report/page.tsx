@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAccessibility } from "@/hooks/useAccessibility";
+import { useLanguage } from "@/hooks/useLanguage";
 import {
   MapPin,
   Camera,
@@ -31,15 +32,16 @@ const LocationPreviewMap = dynamic(() => import("./LocationPreviewMap"), {
 });
 
 const STEPS = [
-  { id: "location", title: "Location", icon: MapPin },
-  { id: "category", title: "Category", icon: FolderOpen },
-  { id: "photo", title: "Photo", icon: Camera },
-  { id: "details", title: "Details", icon: FileText },
-];
+  { id: "location", titleKey: "stepLocation", icon: MapPin },
+  { id: "category", titleKey: "stepCategory", icon: FolderOpen },
+  { id: "photo", titleKey: "stepPhoto", icon: Camera },
+  { id: "details", titleKey: "stepDetails", icon: FileText },
+] as const;
 
 export default function ReportPage() {
   const router = useRouter();
   const { screenReader, reducedMotion } = useAccessibility();
+  const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(0);
 
   // Form State
@@ -242,7 +244,7 @@ export default function ReportPage() {
             style={{ willChange: "transform, opacity" }}
           >
             {/* Title */}
-            <h1 className="text-2xl font-bold mb-2 text-foreground tracking-tight">Report a Civic Issue</h1>
+            <h1 className="text-2xl font-bold mb-2 text-foreground tracking-tight">{t("reportPageTitle")}</h1>
             <p className="text-sm text-muted mb-8 leading-relaxed">
               Complete the steps below. The AI pipeline will validate and file it instantly.
             </p>
@@ -254,7 +256,7 @@ export default function ReportPage() {
                   Step {currentStep + 1} of {STEPS.length}
                 </span>
                 <span className="text-xs font-semibold text-primary">
-                  {STEPS[currentStep].title}
+                  {t(STEPS[currentStep].titleKey)}
                 </span>
               </div>
               <div className="flex gap-2 h-1.5 w-full bg-border rounded-full overflow-hidden">
@@ -280,7 +282,7 @@ export default function ReportPage() {
                   className="space-y-6"
                 >
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">Select City</label>
+                    <label className="text-sm font-semibold text-foreground">{t("selectCity")}</label>
                     <select
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
@@ -295,7 +297,7 @@ export default function ReportPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">Detected Address</label>
+                    <label className="text-sm font-semibold text-foreground">{t("detectedAddress")}</label>
                     <button
                       type="button"
                       onClick={handleUseMyLocation}
@@ -307,18 +309,18 @@ export default function ReportPage() {
                       {detectingLocation ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          📍 Detecting location...
+                          📍 {t("detectingLocationLabel")}
                         </>
                       ) : (
                         <>
                           <MapPin className="w-4 h-4" />
-                          Use My Location
+                          {t("useMyLocation")}
                         </>
                       )}
                     </button>
                     {locationDetected && (
                       <p className="text-xs font-semibold text-success flex items-center gap-1.5" role="status">
-                        <Check className="w-3.5 h-3.5" /> ✅ Location detected
+                        <Check className="w-3.5 h-3.5" /> ✅ {t("locationDetectedLabel")}
                       </p>
                     )}
                     <input
@@ -385,7 +387,7 @@ export default function ReportPage() {
                   transition={transitionVars}
                   className="space-y-4"
                 >
-                  <label className="text-sm font-semibold text-foreground">Select Issue Category</label>
+                  <label className="text-sm font-semibold text-foreground">{t("selectCategory")}</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup" aria-label="Anomaly category selection">
                     {Object.entries(CATEGORY_META).map(([key, value]) => (
                       <button
@@ -420,7 +422,7 @@ export default function ReportPage() {
                   transition={transitionVars}
                   className="space-y-6"
                 >
-                  <label className="text-sm font-semibold text-foreground">Attach Photograph</label>
+                  <label className="text-sm font-semibold text-foreground">{t("attachPhoto")}</label>
                   <p className="text-xs text-muted mb-4 leading-normal">
                     Take or upload a high-quality photo. AI will scan this photo to validate the report.
                   </p>
@@ -435,7 +437,7 @@ export default function ReportPage() {
                         aria-label={screenReader ? "Select and upload a civic issue photograph from your device" : "Upload photo"}
                       />
                       <Upload className="w-10 h-10 text-muted mb-4 pointer-events-none" />
-                      <p className="font-semibold text-sm mb-1 text-foreground pointer-events-none">Click to upload photo</p>
+                      <p className="font-semibold text-sm mb-1 text-foreground pointer-events-none">{t("clickUpload")}</p>
                       <p className="text-xs text-muted pointer-events-none">Supports JPG, PNG up to 5MB</p>
                     </div>
                   ) : (
@@ -501,7 +503,7 @@ export default function ReportPage() {
                   className="space-y-6"
                 >
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">Short Title</label>
+                    <label className="text-sm font-semibold text-foreground">{t("shortTitle")}</label>
                     <input
                       type="text"
                       value={title}
@@ -513,7 +515,7 @@ export default function ReportPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">Detailed Description</label>
+                    <label className="text-sm font-semibold text-foreground">{t("detailedDescription")}</label>
                     <textarea
                       rows={5}
                       value={description}
@@ -536,7 +538,7 @@ export default function ReportPage() {
                 className="h-12 px-4 inline-flex items-center gap-1.5 text-sm font-bold text-muted hover:text-foreground disabled:opacity-30 disabled:pointer-events-none transition-colors rounded hover:bg-border/10 select-none"
                 aria-label={screenReader ? "Go back to the previous report setup step" : "Back"}
               >
-                <ArrowLeft className="w-4 h-4" /> Back
+                <ArrowLeft className="w-4 h-4" /> {t("backBtn")}
               </button>
 
               {currentStep === STEPS.length - 1 ? (
@@ -547,7 +549,7 @@ export default function ReportPage() {
                   className="h-12 px-6 inline-flex items-center gap-1.5 rounded-md font-bold bg-accent text-accent-foreground hover:bg-accent-hover disabled:opacity-50 disabled:pointer-events-none transition-all shadow-sm select-none"
                   aria-label={screenReader ? "Submit report to the AI agent validation pipeline" : "Submit Report"}
                 >
-                  Submit Report <Check className="w-4 h-4" />
+                  {t("submitReport")} <Check className="w-4 h-4" />
                 </button>
               ) : (
                 <button
@@ -557,7 +559,7 @@ export default function ReportPage() {
                   className="h-12 px-6 inline-flex items-center gap-1.5 rounded-md font-bold bg-primary text-primary-foreground hover:bg-primary-hover disabled:opacity-50 disabled:pointer-events-none transition-all select-none"
                   aria-label={screenReader ? "Continue to the next report step" : "Continue"}
                 >
-                  Continue <ArrowRight className="w-4 h-4" />
+                  {t("continueBtn")} <ArrowRight className="w-4 h-4" />
                 </button>
               )}
             </div>

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useAccessibility } from "@/hooks/useAccessibility";
+import { useLanguage } from "@/hooks/useLanguage";
 import {
   Trophy,
   Search,
@@ -27,6 +28,7 @@ const getBadges = (reports: number) => {
 
 export default function LeaderboardPage() {
   const { screenReader } = useAccessibility();
+  const { t } = useLanguage();
   const [selectedCity, setSelectedCity] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [issues, setIssues] = useState<any[]>([]);
@@ -124,13 +126,13 @@ export default function LeaderboardPage() {
       <div className="bg-gradient-to-r from-primary/10 via-surface/40 to-accent/5 border border-border rounded-lg p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="space-y-3 max-w-xl text-center md:text-left">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent/15 text-accent border border-accent/20 w-fit select-none">
-            <Sparkles className="w-3.5 h-3.5" /> Community Heroes
+            <Sparkles className="w-3.5 h-3.5" /> {t("communityBadge")}
           </span>
           <h1 
             className="text-3xl font-extrabold tracking-tight text-foreground"
             style={{ textWrap: "balance", lineHeight: "var(--leading-tight)" }}
           >
-            Citizen Guard Honor Roll
+            {t("lbTitle")}
           </h1>
           <p className="text-sm text-muted leading-relaxed">
             Recognizing citizens who actively spot, report, and help fix urban anomalies. Every verified report contributes to a safer, more accountable community.
@@ -317,7 +319,7 @@ export default function LeaderboardPage() {
                     aria-label={screenReader ? "Filter leaderboard entries by city location" : "Filter by city"}
                     role="combobox"
                   >
-                    <option value="all">All Cities</option>
+                    <option value="all">{t("allCities")}</option>
                     <option value="Bangalore">Bangalore</option>
                     <option value="Mumbai">Mumbai</option>
                     <option value="Delhi">Delhi</option>
@@ -397,7 +399,7 @@ export default function LeaderboardPage() {
                           <div className="flex items-center gap-6 md:gap-12 flex-shrink-0 text-right">
                             {/* Reports Stats */}
                             <div>
-                              <div className="text-[10px] uppercase font-bold text-muted">Reports / Resolved</div>
+                              <div className="text-[10px] uppercase font-bold text-muted">{t("reportsResolved")}</div>
                               <div className="text-xs font-bold text-foreground mt-0.5">
                                 {entry.reports} / <span className="text-success">{entry.resolved}</span>
                               </div>
@@ -405,7 +407,7 @@ export default function LeaderboardPage() {
 
                             {/* Impact Score */}
                             <div>
-                              <div className="text-[10px] uppercase font-bold text-muted">Impact Score</div>
+                              <div className="text-[10px] uppercase font-bold text-muted">{t("impactScore")}</div>
                               <div className="text-sm font-extrabold text-accent flex items-center gap-1 justify-end mt-0.5 select-none">
                                 <Zap className="w-3.5 h-3.5 fill-current" />
                                 <span>{entry.points.toLocaleString("en-IN")}</span>
@@ -439,28 +441,28 @@ export default function LeaderboardPage() {
                   <div className="flex items-center gap-2 bg-background/50 border border-border/30 p-2 rounded">
                     <span className="text-base select-none">🌱</span>
                     <div>
-                      <div className="font-bold text-foreground">First Report</div>
+                      <div className="font-bold text-foreground">{t("badgeFirstReport")}</div>
                       <div>1+ reported issue</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 bg-background/50 border border-border/30 p-2 rounded">
                     <span className="text-base select-none">📢</span>
                     <div>
-                      <div className="font-bold text-foreground">Voice</div>
+                      <div className="font-bold text-foreground">{t("badgeVoice")}</div>
                       <div>5+ reported issues</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 bg-background/50 border border-border/30 p-2 rounded">
                     <span className="text-base select-none">🛡️</span>
                     <div>
-                      <div className="font-bold text-foreground">Guardian</div>
+                      <div className="font-bold text-foreground">{t("badgeGuardian")}</div>
                       <div>10+ reported issues</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 bg-background/50 border border-border/30 p-2 rounded">
                     <span className="text-base select-none">🏆</span>
                     <div>
-                      <div className="font-bold text-foreground">City Hero</div>
+                      <div className="font-bold text-foreground">{t("badgeCityHero")}</div>
                       <div>20+ reported issues</div>
                     </div>
                   </div>
