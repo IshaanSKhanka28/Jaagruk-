@@ -238,3 +238,5 @@ CLOUDINARY_API_SECRET=your_api_secret
 [Live App](https://jaagruk.vercel.app) · [Report an Issue](https://jaagruk.vercel.app/report) · [View the Map](https://jaagruk.vercel.app/map)
 
 </div>
+
+
