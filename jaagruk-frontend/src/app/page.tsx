@@ -82,35 +82,35 @@ const PARTICLES = [
 const AGENT_PIPELINE = [
   {
     icon: Eye,
-    title: "1. Vision Agent",
-    desc: "Validates uploaded photographs instantly using computer vision, filtering spam/irrelevant uploads and identifying specific damage type & severity.",
+    titleKey: "agent1Title",
+    descKey: "agent1Desc",
     color: "text-error bg-error/5 border-error/15",
   },
   {
     icon: Zap,
-    title: "2. Classification Agent",
-    desc: "Extracts metadata, detects categories (Roads, Water, Sanitation, Electrical) and assigns priority levels based on public safety hazards.",
+    titleKey: "agent2Title",
+    descKey: "agent2Desc",
     color: "text-warning bg-warning/5 border-warning/15",
   },
   {
     icon: MapPin,
-    title: "3. Routing Agent",
-    desc: "Uses geolocation data to identify corresponding municipal administrative wards and forwards files directly to the respective department's officer.",
+    titleKey: "agent3Title",
+    descKey: "agent3Desc",
     color: "text-primary bg-primary/5 border-primary/15",
   },
   {
     icon: Building2,
-    title: "4. Complaint Agent",
-    desc: "Generates structured formal letters and submissions detailing guidelines violated, and auto-submits reports into government grievance portals.",
+    titleKey: "agent4Title",
+    descKey: "agent4Desc",
     color: "text-success bg-success/5 border-success/15",
   },
   {
     icon: Clock,
-    title: "5. Tracking Agent",
-    desc: "Monitors status changes from government APIs, alerts you of updates, and enables community upvoting to bump unresolved high-priority issues.",
+    titleKey: "agent5Title",
+    descKey: "agent5Desc",
     color: "text-info bg-info/5 border-info/15",
   },
-];
+] as const;
 
 export default function Home() {
   const { resolvedTheme } = useTheme();
@@ -287,21 +287,21 @@ export default function Home() {
               className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-6 flex flex-wrap justify-center gap-x-3 gap-y-1.5"
             >
               <div className="flex flex-wrap justify-center gap-x-3">
-                <motion.span variants={wordVariant} className="inline-block" style={{ willChange: "transform, opacity" }}>AI-Powered</motion.span>
-                <motion.span variants={wordVariant} className="inline-block" style={{ willChange: "transform, opacity" }}>Civic</motion.span>
-                <motion.span variants={wordVariant} className="inline-block" style={{ willChange: "transform, opacity" }}>Action</motion.span>
+                {t("heroTitle1").split(" ").map((word, i) => (
+                  <motion.span key={`t1-${i}`} variants={wordVariant} className="inline-block" style={{ willChange: "transform, opacity" }}>{word}</motion.span>
+                ))}
               </div>
               <div className="w-full hidden sm:block h-0" />
               <div className="flex flex-wrap justify-center gap-x-3 text-primary">
-                <motion.span variants={wordVariant} className="inline-block" style={{ willChange: "transform, opacity" }}>For</motion.span>
-                <motion.span variants={wordVariant} className="inline-block" style={{ willChange: "transform, opacity" }}>Accountable</motion.span>
-                <motion.span variants={wordVariant} className="inline-block" style={{ willChange: "transform, opacity" }}>Cities</motion.span>
+                {t("heroTitle2").split(" ").map((word, i) => (
+                  <motion.span key={`t2-${i}`} variants={wordVariant} className="inline-block" style={{ willChange: "transform, opacity" }}>{word}</motion.span>
+                ))}
               </div>
             </motion.h1>
 
             {/* Description */}
             <p className="text-lg md:text-xl text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
-              Empower your neighborhood. Upload a photo of a civic issue — pothole, broken streetlight, or garbage dump — and watch our multi-agent AI pipeline translate it into trackable municipal action in 60 seconds.
+              {t("heroDesc")}
             </p>
 
             {/* CTAs */}
@@ -343,17 +343,17 @@ export default function Home() {
             >
               <div className="flex items-center gap-1.5">
                 <Zap className="w-4 h-4 text-[#F97316] fill-[#F97316]/20" />
-                <span>AI Response in 5 seconds</span>
+                <span>{t("trustSpeed")}</span>
               </div>
               <span className="hidden sm:inline opacity-30">|</span>
               <div className="flex items-center gap-1.5">
                 <Shield className="w-4 h-4 text-[#F97316] fill-[#F97316]/20" />
-                <span>Verified by Gemini Vision</span>
+                <span>{t("trustVerified")}</span>
               </div>
               <span className="hidden sm:inline opacity-30">|</span>
               <div className="flex items-center gap-1.5">
                 <MapPin className="w-4 h-4 text-[#F97316] fill-[#F97316]/20" />
-                <span>Live across 12 cities</span>
+                <span>{t("trustCities")}</span>
               </div>
             </div>
 
@@ -368,23 +368,23 @@ export default function Home() {
             <StatCard
               icon={TrendingUp}
               value={MOCK_DASHBOARD_STATS.totalReports}
-              label="Total Complaints Filed"
+              label={t("statTotal")}
             />
             <StatCard
               icon={CheckCircle2}
               value={MOCK_DASHBOARD_STATS.resolved}
-              label="Issues Resolved"
+              label={t("statResolved")}
             />
             <StatCard
               icon={Clock}
               value={MOCK_DASHBOARD_STATS.avgResolutionHours}
-              label="Avg. Resolution (Hrs)"
+              label={t("statAvgResolution")}
               suffix="h"
             />
             <StatCard
               icon={Award}
               value={MOCK_DASHBOARD_STATS.citizensEngaged}
-              label="Active Citizens"
+              label={t("statActiveCitizens")}
             />
           </div>
         </div>
@@ -401,10 +401,10 @@ export default function Home() {
       >
         <div className="mx-auto max-w-[1120px] px-4">
           <div className="text-center max-w-2xl mx-auto mb-16 flex flex-col items-center">
-            <h2 className="text-3xl font-bold tracking-tight">How Jaagruk Works</h2>
+            <h2 className="text-3xl font-bold tracking-tight">{t("howTitle")}</h2>
             <div className="mt-2 h-[3px] w-[40px] bg-[#F97316] rounded-full" />
             <p className="text-muted leading-relaxed mt-6">
-              When you submit a complaint, Jaagruk launches a specialized squad of artificial intelligence agents to analyze, route, file, and track the issue.
+              {t("howDesc")}
             </p>
           </div>
 
@@ -442,8 +442,8 @@ export default function Home() {
                   <div className={`p-3 rounded-md mb-4 border ${agent.color} relative z-10`}>
                     <Icon className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2 relative z-10">{agent.title}</h3>
-                  <p className="text-sm text-muted leading-relaxed relative z-10">{agent.desc}</p>
+                  <h3 className="text-lg font-semibold mb-2 relative z-10">{t(agent.titleKey)}</h3>
+                  <p className="text-sm text-muted leading-relaxed relative z-10">{t(agent.descKey)}</p>
                 </motion.div>
               );
             })}
@@ -456,14 +456,14 @@ export default function Home() {
         <div className="mx-auto max-w-[1120px] px-4">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
             <div>
-              <h2 className="text-3xl font-bold tracking-tight mb-2">Live Issue Feed</h2>
-              <p className="text-muted">Real-time reports filed by citizens across key municipal wards.</p>
+              <h2 className="text-3xl font-bold tracking-tight mb-2">{t("liveFeedTitle")}</h2>
+              <p className="text-muted">{t("liveFeedDesc")}</p>
             </div>
             <Link
               href="/dashboard"
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-hover transition-colors group"
             >
-              Explore Dashboard <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              {t("exploreDashboard")} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
 
@@ -489,20 +489,20 @@ export default function Home() {
           <div className="bg-surface border border-border rounded-lg p-8 md:p-12 shadow-sm flex flex-col md:flex-row items-center gap-8">
             <div className="flex-1">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 mb-4">
-                Community Heroes
+                {t("communityBadge")}
               </span>
               <h2 className="text-3xl font-bold tracking-tight mb-4">
-                Join the Citizen Shield Network
+                {t("communityTitle")}
               </h2>
               <p className="text-muted leading-relaxed mb-6">
-                Cities improve when citizens participate. With Jaagruk, your contribution is recognized. Earn impact points, unlock badges, and help guide municipal teams to the areas needing the most critical work.
+                {t("communityDesc")}
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link
                   href="/leaderboard"
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md font-semibold bg-primary text-primary-foreground hover:bg-primary-hover transition-colors"
                 >
-                  Meet Top Contributors
+                  {t("meetContributors")}
                 </Link>
               </div>
             </div>
@@ -513,9 +513,9 @@ export default function Home() {
                 <div className="w-20 h-20 rounded-full bg-accent/20 border border-accent/30 text-accent flex items-center justify-center mb-4">
                   <Award className="w-10 h-10" />
                 </div>
-                <h4 className="text-lg font-bold text-foreground mb-1">Citizen Honor Roll</h4>
+                <h4 className="text-lg font-bold text-foreground mb-1">{t("honorRoll")}</h4>
                 <p className="text-xs text-muted max-w-[200px]">
-                  Awarded to individuals with over 10 resolved reports this month.
+                  {t("honorRollDesc")}
                 </p>
               </div>
             </div>
